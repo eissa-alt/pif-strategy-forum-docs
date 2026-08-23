@@ -539,10 +539,23 @@ most of the high-severity list.
       fills in visa/accommodation/flight fields that are then **silently discarded** — previously
       lost to a duplicate record, now lost to the allow-list. See `FORK_PORT_BACK_LEFTOVERS.md`.
 
-- [ ] **Prefilled forms reject the guest's own email.**
+- [x] **Prefilled forms reject the guest's own email.**
       `isUniqueAttribute(...)` is called with the mode hardcoded to `'create'`, so the check matches
       the guest's own row and blocks submit. The guest id is already being passed — only the mode is
       wrong. 3 call sites. From gfeai `3499a55`.
+      **DONE — frontend `15caa95`.** Chain verified end to end:
+      `GuestsCompleteMissingDataResources` exposes `id` → the page passes `defaultFormValues={guest}`
+      → `getValues('id')` is populated. `checkUnique` forgives a row against itself only when
+      **`mode === 'edit'` AND the id matches** — the literal is `'edit'`, not `'update'`. Mode is now
+      derived from whether an id exists, so a fresh registration still sends `'create'`.
+      **This item's description was accurate** — the first one this session that needed no
+      correction.
+      ⚠️ **But "3 call sites" is wrong: only TWO should change.** The third is the **plus-one** email
+      validator, where `getValues('id')` is the *primary* guest's row — passing `'edit'` would ask
+      the backend to forgive a collision with the primary, letting a plus-one reuse the main
+      registrant's address. A plus-one has no own row to forgive, so it stays `'create'` with a
+      comment saying why. A local check above it already blocked that case, so it was never
+      exploitable; the change would simply have been wrong.
 
 - [ ] **The completion page marks every field required**, because it passes no optional/mandatory
       lists. From gfeai `3499a55`.
