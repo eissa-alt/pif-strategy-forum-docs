@@ -600,8 +600,27 @@ most of the high-severity list.
       `data/mandatory-fields-select.tsx`, which is marked `@deprecated`; the picker actually uses
       `getMandatoryFieldsByFormShape()`, which already had 13 of 14. No such danger existed.
 
-- [ ] **The country dropdown silently wipes a saved country** that is no longer in the list — on
+- [x] **The country dropdown silently wipes a saved country** that is no longer in the list — on
       the prefilled complete-data form, which is exactly where it hurts.
+      **NOT REPRODUCIBLE — closed 2026-08-24, no code change.** Every condition that could fire the
+      clearing effect was checked and none can:
+      1. **Not on the complete-data page at all.** `GuestsCompleteMissingDataResources` does not
+         return `nationality` or `country_of_residence`, so the select receives
+         `selected_id={undefined}` — and the effect is guarded on `selected_id &&
+         !selectedOption && !fetchLoading && countries.length > 0`. It short-circuits on the exact
+         page the item calls out.
+      2. **The list is never filtered.** `CountryController::selectList()` is a bare
+         `Country::orderBy('name_en')->get()` — no `is_active`, no scope — so every country is
+         always returned and any stored id always matches.
+      3. **Countries cannot be deleted.** The admin routes are `index`, `store`, `show`, `update`;
+         there is **no destroy route**. A country cannot vanish from the list.
+      The effect is defensive code that, on this codebase, never runs.
+      ⚠️ **It did surface a real gap, logged separately:** that resource returns only **13 fields**,
+      so on a four-step completion form nationality, residency, document, visa and birth fields all
+      render **empty** despite being stored — the "prefilled" form is not prefilled past step 1.
+      That is the mirror of LEFTOVERS 2.5, where the *submit* path drops the same fields via a
+      12-field allow-list. Both ends of the flow are narrowed to the same subset; the decision lives
+      in 2.5.
 
 - [ ] **Two-step form shapes strand the user.** `renderFormSteps` step-2 branch is not
       last-step aware, so the guest submits, the record is created, and nothing happens next.

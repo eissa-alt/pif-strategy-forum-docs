@@ -96,6 +96,17 @@ profile-only flow and stop rendering the logistics steps on it. gfeai chose the 
 (`6b15463` splits `/complete-data` from `/complete-logistics`) — that is the large
 `completion_tokens` item in findings §5.
 
+**Updated 2026-08-24 — it is symmetrical, which strengthens the second option.** The *read* side is
+narrowed the same way: `GuestsCompleteMissingDataResources` returns only **13 fields** (id, gender,
+title, first/last name, company, job_title, email, phone, personal_image, will_attend,
+dietary_requirements). So on a four-step completion form, nationality, residency, document, visa and
+birth fields render **empty** despite being stored — the form is not "prefilled" past step 1 — and
+anything typed into them is then dropped by the 12-field allow-list on submit.
+
+So the flow is already, in practice, a profile-only flow: it neither loads nor saves the logistics
+half. Making that explicit (gfeai's split) matches what the code already does; widening both ends
+would be the larger change.
+
 ---
 
 ### 2.6 Other ALT clients' buckets on live render paths — PARKED 2026-08-12
