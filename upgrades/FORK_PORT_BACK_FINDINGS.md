@@ -559,6 +559,38 @@ most of the high-severity list.
 
 - [ ] **The completion page marks every field required**, because it passes no optional/mandatory
       lists. From gfeai `3499a55`.
+      ⚠️ **Half wrong, and the half it misses is worse.** The two lists work in OPPOSITE directions,
+      so passing neither breaks the form both ways at once:
+      `mandatoryFields?.includes(x) ?? false` → missing means **optional**;
+      `!optionalFields || !optionalFields.includes(x)` → missing means **required**.
+      On the **one-step shape** (21 `mandatoryFields` uses) the completion form asked for
+      **nothing** — a guest could submit it blank, which is the opposite of the reported bug and
+      arguably worse, since collecting missing data is the entire point of the link. Only
+      four-steps step-2 matched the description.
+      **Partly addressed by `P033.37`** (below), which removed the inverted list entirely — so the
+      remaining work here is just passing the category's `mandatory_fields` to the completion page,
+      and checking whether `verifyStatusAndToken` even returns it. **Still open.**
+
+- [x] **`optionalFields` is dead input and inverts the required/optional default.** *(Raised while
+      doing the item above, 2026-08-24.)*
+      **DONE — frontend `e0d049f`, admin `f91fcc5`, backend `c6bf5d2`.**
+      `fours-steps/step-2` gated 14 ID/visa fields on the category's `optional_fields` — required
+      *unless* listed — while every other step uses `mandatory_fields`, required *when* listed.
+      `optional_fields` is a column **the admin form has never written**, so it was permanently
+      null: all 14 fields were unconditionally required for every category, unchangeable. The list
+      existed only to be empty.
+      All 29 logic sites migrated to `mandatoryFields`, then the whole prop chain deleted
+      (`renderFormSteps`, `form-wrapper`, three step-1 declarations, both join pages) — **zero
+      references remain**. Admin gained `full_name_on_document`, the one field of the 14 its picker
+      did not already offer. A data migration backfills the 14 names into existing
+      `default-four-steps` categories, verified against a real DB (de-dupes, leaves other shapes
+      alone, `down()` reverses).
+      ⚠️ **DEPLOY ORDER: run the migration BEFORE shipping the frontend**, or all 14 ID/visa fields
+      silently become optional. Not yet run on the dev DB.
+      ⚠️ **A claim I made mid-investigation was wrong:** I reported the admin picker offered none of
+      these fields and that a category save would wipe the backfill. I had read
+      `data/mandatory-fields-select.tsx`, which is marked `@deprecated`; the picker actually uses
+      `getMandatoryFieldsByFormShape()`, which already had 13 of 14. No such danger existed.
 
 - [ ] **The country dropdown silently wipes a saved country** that is no longer in the list — on
       the prefilled complete-data form, which is exactly where it hurts.
