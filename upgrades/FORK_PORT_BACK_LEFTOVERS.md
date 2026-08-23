@@ -161,6 +161,23 @@ would call.
 partial failure — block the whole batch, or drop the offending rows and continue? The server
 currently blocks the whole batch, so a form that silently dropped rows would disagree with it.
 
+### 2.8 `visa_status_types` / `residencyStatusTypes` is dead plumbing
+
+The same shape as the `optionalFields` problem removed in `P033.37`, found while doing `P033.38`.
+
+`pages/[lang]/join/[category]/index.tsx` reads `data.visa_status_types` and passes it on as
+`residencyStatusTypes`. **The API never returns that key** — a grep across the whole backend finds
+nothing that produces it — so the value is always `null`, on the join page as well as the
+completion page.
+
+**No visible defect:** `fours-steps/step-2` falls back to the full `ResidencyStatusTypesSelect`
+when the prop is empty, so the residency dropdown shows every option and always has.
+
+**The decision:** delete the dead prop chain (as was done for `optionalFields`), or implement it —
+return the category's allowed residency statuses from the API so a category can restrict the list.
+The second is a small feature; the first is cleanup. Doing neither leaves a prop that looks
+configurable and is not.
+
 ## 3. Cosmetic / hygiene
 
 ### 3.1 `anchor` on Headless UI panels (dropdown clipping)

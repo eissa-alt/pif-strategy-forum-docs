@@ -557,7 +557,7 @@ most of the high-severity list.
       comment saying why. A local check above it already blocked that case, so it was never
       exploitable; the change would simply have been wrong.
 
-- [ ] **The completion page marks every field required**, because it passes no optional/mandatory
+- [x] **The completion page marks every field required**, because it passes no optional/mandatory
       lists. From gfeai `3499a55`.
       ⚠️ **Half wrong, and the half it misses is worse.** The two lists work in OPPOSITE directions,
       so passing neither breaks the form both ways at once:
@@ -567,9 +567,17 @@ most of the high-severity list.
       **nothing** — a guest could submit it blank, which is the opposite of the reported bug and
       arguably worse, since collecting missing data is the entire point of the link. Only
       four-steps step-2 matched the description.
-      **Partly addressed by `P033.37`** (below), which removed the inverted list entirely — so the
-      remaining work here is just passing the category's `mandatory_fields` to the completion page,
-      and checking whether `verifyStatusAndToken` even returns it. **Still open.**
+      **DONE — backend `0dab0d1`, frontend `b0d33cf`.** `verifyStatusAndToken` returned only
+      `status`, `guest`, `form_shape` — **no field rules at all** — so the form rendered with
+      nothing configured. It now returns `mandatory_fields`, `extra_guest_mandatory_fields`,
+      `with_extra_guests` and `number_of_extra_guests`, mirroring `verifyInvitation`; the page
+      threads them into the same `JoinFormWrapper`. Additive only, and the endpoint is absent from
+      `docs/mobile/` (hard rule 4 checked).
+      ⚠️ **The real gap was 4 props, not the 9 first identified.** `guestEmail`/`FirstName`/
+      `LastName` are already covered by `defaultFormValues`, and `residencyStatusTypes` is **not**
+      needed — step-2 falls back to the full `ResidencyStatusTypesSelect` when it is empty, so that
+      dropdown was never broken. See the new leftovers entry: `visa_status_types` is never returned
+      by the API at all, so the **join** page passes `null` too.
 
 - [x] **`optionalFields` is dead input and inverts the required/optional default.** *(Raised while
       doing the item above, 2026-08-24.)*
