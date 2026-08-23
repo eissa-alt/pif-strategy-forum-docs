@@ -451,9 +451,16 @@ most of the high-severity list.
       ⚠️ `e-visa-listing` has two near-identical catch blocks; the first (`:315`) is **not** the blob
       one. Easy to patch the wrong one — I did, briefly.
 
-- [ ] **Social-media modal sends bad data.** `order` goes as a string (backend wants an integer,
+- [x] **Social-media modal sends bad data.** `order` goes as a string (backend wants an integer,
       422), `link` has no URL validation, and every platform tile draws a check mark, not just the
       selected one. From gfeai `b194523`.
+      **DONE — admin `5abb472`.** ⚠️ **`order` does NOT 422** as claimed: Laravel's `integer` rule
+      uses `filter_var(FILTER_VALIDATE_INT)`, and `'3'` passes — tested. Fixed anyway because the
+      form type declared `order: number | null` while `register()` on a number input stored a
+      **string**, and `3.5` *does* 422. The link now has a client-side URL pattern (EN + AR
+      `validation:url`), and the tick renders only on the selected tile — it used to draw on every
+      tile and rely on colour alone. The 8 broken social icons in the same file are the parked
+      LEFTOVERS 2.6 bucket decision, deliberately untouched.
 
 - [ ] **Admin CSP blocks 8 social icons.** `soical-media-modal.tsx:43+` hardcodes them on
       **another ALT client's bucket** (`emails-alt.eu-central-1.linodeobjects.com`). It is never
@@ -665,9 +672,23 @@ inherited a complete integration and had nothing to fix in it.
       gfeai's first attempt (`21037e6`) was wrong: gating on `usage_type` still blocked
       number-of-use invitations whose `usage_type` was `single` or unset.
 - [x] **Plain `build` script** — see section 4.
-- [ ] **Derive `is_saudi` from the ISO country code**, not the country's display name. Today it
+- [x] **Derive `is_saudi` from the ISO country code**, not the country's display name. Today it
       matches a localized label, so it breaks in Arabic. The shared country select cannot even
       expose the code — that needs adding. `dcee22e` / `38b4209`.
+      **DONE — frontend `eb12414`, admin `d5c2e0d`.**
+      ⚠️ **"Breaks in Arabic" is wrong.** The code checks *both* labels, and the hardcoded Arabic
+      string is **byte-identical** to the seeded `name_ar` — verified before changing anything. It
+      works today in both languages.
+      **The real defect is fragility, and the blast radius is why it was worth doing:** countries
+      are editable from the admin, so a rename, a spacing fix or appending "(KSA)" silently flips
+      `is_saudi` to false — which then wrongly sets `document_type`, `religion`,
+      `residency_status`, `valid_visa` and `document_number`. Silent, surfacing much later in a visa
+      workflow. Second trigger: `label` gains a phone code in `isPhoneCode` mode, so the match
+      already failed on those variants.
+      **Fixed in BOTH repos.** The admin guest form carried the identical two hardcoded strings;
+      fixing only the frontend would have left the half-fix pattern this backlog keeps turning up.
+      Neither select exposed `code` — though the backend already returned it
+      (`CountriesSelectResources`) and the frontend select carried it in `raw: c`, just untyped.
 - [ ] **Two-step form dead end** — see the gfeai frontend list; ewc fixed it too.
 - [ ] **`DATE_COLS` in the guest export point at the wrong columns** — folded into the export
       mechanism job above.
