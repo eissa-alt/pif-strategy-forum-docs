@@ -628,9 +628,25 @@ most of the high-severity list.
       12-field allow-list. Both ends of the flow are narrowed to the same subset; the decision lives
       in 2.5.
 
-- [ ] **Two-step form shapes strand the user.** `renderFormSteps` step-2 branch is not
+- [x] **Two-step form shapes strand the user.** `renderFormSteps` step-2 branch is not
       last-step aware, so the guest submits, the record is created, and nothing happens next.
       **Fixed independently in both gfeai and ewc** — two forks hitting it is a strong signal.
+      **Done** — `P033.46`, frontend `f4cb529`. `isLastStep` was computed at line 110 but only used
+      to derive `nextStepId`, never to change behaviour.
+      ⚠️ **Cannot fire in this baseline today** — this is why the earlier liveness check on this item
+      came back negative, and the item does not say so. Our shapes are `default` (1),
+      `default-one-step-rsvp` (1) and `default-four-steps` (4), so `personal-info-2` is only ever
+      index 1 and `flights-info` only ever index 2. The commit changes nothing observable here; it
+      matters because this repo is the **clone baseline** — gfeai added six 2-step and two 3-step
+      shapes, ewc added `ewc-two-steps`, and both hit it immediately.
+      **Fixed both branches**, not just step 2: the root cause is a branch that is not last-step
+      aware, and `flights-info` has the identical defect for a 3-step shape (gfeai, which has 3-step
+      shapes, fixed both). **Not ported:** gfeai also threads `withToken` / `token` /
+      `onCustomSubmit` through these branches — `step-3.tsx` consumes none of them and `step-2.tsx`
+      only `token`, which it already had, so porting them would be dead plumbing. `optionalFields`
+      appears throughout both forks' copies of this file and is not ported either.
+      **Limitation:** this fixes navigation only. A clone building a real 2-step shape still needs a
+      `step-2` that POSTs — ours is a middle step and does not submit.
 
 - [ ] **Admin-controllable privacy consent** — today the consent checkbox is hardcoded per shape,
       one shape has none, and one records consent silently. gfeai `bfebdfc` / `0bef709`.
@@ -891,7 +907,8 @@ inherited a complete integration and had nothing to fix in it.
       fixing only the frontend would have left the half-fix pattern this backlog keeps turning up.
       Neither select exposed `code` — though the backend already returned it
       (`CountriesSelectResources`) and the frontend select carried it in `raw: c`, just untyped.
-- [ ] **Two-step form dead end** — see the gfeai frontend list; ewc fixed it too.
+- [x] **Two-step form dead end** — see the gfeai frontend list; ewc fixed it too. **Done** —
+      `P033.46`, frontend `f4cb529`. Same item as §5; one fix closes both.
 - [ ] **`DATE_COLS` in the guest export point at the wrong columns** — folded into the export
       mechanism job above.
 - [x] **Favicon tags reference three assets that do not exist** in the repo. **Done** — `P033.45`,
