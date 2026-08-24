@@ -544,9 +544,29 @@ most of the high-severity list.
 - [ ] **Searchable guest-type picker** instead of an unbounded card list. gfeai `c127e36`.
 - [ ] **Per-option help text on radio groups** — `custom-radio-input.tsx` can only show one shared
       label and only lays out horizontally. gfeai `03d2411`.
-- [ ] **Scroll hint on listing tables.** Every listing is a fixed 1120px table; on a laptop the
-      Actions column (Edit/Delete) is off-screen with nothing indicating it. **46 components import
+- [ ] **Scroll hint on listing tables.** ~~Every listing is a fixed 1120px table; on a laptop the
+      Actions column (Edit/Delete) is off-screen with nothing indicating it.~~ **47 components import
       `ListingTable`** — one edit fixes all of them. gfeai `cd0a861`.
+      🔎 **AUDIT 2026-08-24 — the premise is wrong; NOT ported. Needs a browser before anyone tries
+      again.** `ListingTable` defines `STICKY_COL = 'sticky ltr:right-0 rtl:left-0 bg-white z-10'`
+      and applies it via `isActionsColumn(col.key) && STICKY_COL` in **both** render paths, so
+      **Actions is pinned to the trailing edge and never scrolls off** — Edit/Delete are always
+      reachable. What remains true is milder: the *middle* columns scroll with no affordance.
+      **gfeai's fix collides with that sticky column.** Their overlay is a 48px (`w-12`) fade pinned
+      to the same trailing edge at the same `z-10`, so it either washes out the Edit/Delete buttons
+      or paints behind them and is invisible — which one depends on stacking-context resolution
+      between a `z-10` absolute sibling and a `z-10` sticky descendant, and **that cannot be settled
+      from source**. gfeai carries the identical conflict.
+      Two further defects in their version: it is **not RTL-aware** (hardcoded `right-0` /
+      `bg-gradient-to-l`, while our table uses `ltr:`/`rtl:` variants throughout, so the hint points
+      the wrong way in Arabic), and it is **always on** (no overflow detection, so a wide monitor
+      where the 1120px table fits still shows a permanent arrow that lies).
+      **If picking this up:** a corrected version is ~20 lines — detect overflow via
+      `scrollWidth > clientWidth` with a `ResizeObserver`, and place with `ltr:`/`rtl:` variants plus
+      `rtl:rotate-180` on the chevron. Avoid tracking scroll *position*: RTL `scrollLeft` sign is
+      inconsistent across browsers. **Check the sticky-column overlap in a browser first** — if the
+      fade is invisible behind Actions, the whole affordance needs to sit inside the scroll container
+      instead. This is a visual change across 47 screens; it should not ship unseen.
 - [x] **Show consumed uses / limit** on the invitations listing instead of a raw send count.
       gfeai `5520a33`. **Done** — `P033.51`, admin `3688054`. Renders `uses / valid_up_to`.
       **Admin-only — no backend change:** `InvitationResource` already exposes `uses`,
