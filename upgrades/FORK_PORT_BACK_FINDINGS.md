@@ -755,13 +755,13 @@ inherited a complete integration and had nothing to fix in it.
 
 **Admin**
 
-- [ ] **`whatsapp-variables-select-ordered.tsx` (new, 243 lines)** — an ordered picker. Position
+- [x] **`whatsapp-variables-select-ordered.tsx` (new, 243 lines)** — an ordered picker. Position
       **is** the Meta `{{n}}` placeholder, which is why it is deliberately not the existing
       `CheckboxDropdown` (that returns values in option order, not selection order, and would
       silently remap the template). Unknown saved names are kept and flagged amber, never dropped.
-- [ ] **`data/whatsapp-body-variables.ts` (new)** — catalogue of the 18 names the backend can
+- [x] **`data/whatsapp-body-variables.ts` (new)** — catalogue of the 18 names the backend can
       actually resolve, each tagged `scope: both | invitation | guest`.
-- [ ] **`whatsapp-templates-form.tsx` (+73)** — replaces the free-text comma list. Today a typo
+- [x] **`whatsapp-templates-form.tsx` (+73)** — replaces the free-text comma list. Today a typo
       ships a literal variable name to Meta with nothing flagging it.
 - [x] **WhatsApp → Config admin screen** *(replaces the `/conference` link item — see the section
       header).* **DONE — admin `edfa1f7`.** The screen for the `whatsapp_configs` singleton: form,
@@ -783,7 +783,18 @@ inherited a complete integration and had nothing to fix in it.
       the sidebar item as won't-do (section 10) and pep independently hid the same link
       (admin `eaa0fb8`). The conferences row remains the **mobile app's** config, edited via
       `/conference` by direct URL.
-- [ ] **Translations EN + AR** — 4 keys: `body_variables_add`, `_empty`, `_custom`, `_unsupported`.
+- [x] **Translations EN + AR** — 4 keys: `body_variables_add`, `_empty`, `_custom`, `_unsupported`.
+      **All four items above DONE — admin `6f852af`** (picker + catalogue + form + keys land
+      together; the form is unusable without the picker, the picker without the catalogue).
+      ⚠️ **It is 6 keys, not 4** — `move_up` / `move_down` are absent from our translations too.
+      EN/AR parity 1796/1796.
+      ⚠️ **The catalogue was verified against OUR renderer, not copied.** Its own docblock warns an
+      out-of-sync name ships to Meta as a literal. Two mismatches: **`seat_label`** is resolvable
+      here but missing from pep's list (added), and **`reconfirmation_url`** looked missing from our
+      renderer but is resolvable — minted conditionally in `forGuest()`, outside the maps so a token
+      is only created when a template uses it. Final: **26 entries, every one resolvable**, checked
+      programmatically.
+      The catalogue count in this item ("18 names") is also stale.
 
 ---
 
