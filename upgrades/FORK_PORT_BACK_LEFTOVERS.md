@@ -36,6 +36,41 @@ needs one added and a judgement about the right default. Mechanical, but not a s
 tracks them — the baseline entries *are* the backlog, and PHPStan fails the build if one is fixed
 without removing its entry.
 
+### 1.2 `NEXT_PUBLIC_BASE_URL` has no fallback — renders `undefined…` under `yarn build`
+
+Found while fixing the favicon (`P033.45`). The var is defined only in `.env*`, and our quality-gate
+command **`yarn build` is a plain `next build` with no `.env`** — so every raw concatenation of it
+renders the literal string `undefined`:
+
+| File | Line | Renders as |
+|---|---|---|
+| `utils/publicUrl.ts` | 4 | `undefined/<path>` — the helper itself, so every caller inherits it |
+| `pages/_app.tsx` | 92 | `canonical` = `undefined<route>` |
+| `pages/_app.tsx` | 109 | OG `url` = `undefined<route>` |
+| `pages/_app.tsx` | 112 | OG `image` = `undefined/seo/seo-v3.jpg` |
+
+`_app.tsx:75` is the only one guarded (`|| ''`). `P033.45` sidestepped it for the favicon by using a
+same-origin relative path, which is the correct fix for an asset on our own origin — but `canonical`
+and the OG tags **must** be absolute, so they need a real base-URL fallback, not a relative path.
+
+**Why it matters:** wrong `canonical` and OG tags are an SEO and link-preview problem, and they fail
+silently — the page renders fine and nothing errors. **Needs checking against the real deploy
+first:** if production always builds with `.env.production` present (`yarn production`), the live
+site is fine and this only affects local/CI builds. That is the question to settle before choosing
+between a build-time assert and a runtime default.
+
+### 1.3 The admin has no favicon at all
+
+`admin/pages/_document.tsx:22` points at `/favicon.ico`, but `admin/public/` contains only
+`_favicon.ico` — underscore-prefixed, the generator's placeholder. So the admin tab has shown no
+icon since the baseline was created.
+
+**No fork fixes this** — ewc's admin has the identical gap; gfeai and pep each dropped in their own
+branded `favicon.ico` next to the placeholder, which is a per-project asset, not a port. The
+baseline fix is to provide a working default (copy `_favicon.ico` → `favicon.ico`) so every clone
+starts with an icon and replaces it with its own branding. One file, needs a call on whether the
+baseline should ship a generic icon or stay deliberately unbranded.
+
 ---
 
 ## 2. Decisions, not ports

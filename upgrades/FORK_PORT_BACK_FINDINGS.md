@@ -703,8 +703,15 @@ most of the high-severity list.
 - [ ] **`admins.is_vip` flag** — independent of role. Small migration + form toggle + a live-resolved
       `actor_is_vip` on the seating audit log, highlighted in the seating app's notification panel.
 - [ ] **Seat/table number in the default see-more panel** — present only on the RSVP shape today.
-- [ ] **Favicon components reference three assets that are not in `public/`**, while the real ones
-      go unreferenced.
+- [x] **Favicon components reference three assets that are not in `public/`**, while the real ones
+      go unreferenced. **Done** — `P033.45`, frontend `97700e7`. `favicon-32x32.png`,
+      `favicon-16x16.png` and `safari-pinned-tab.svg` all 404'd; `favicon.svg` and
+      `favicon-96x96.png` sat in `public/` unreferenced. Ported **ewc's** approach, not pep's: pep
+      and gfeai added the three missing binaries, ewc made the tags follow the assets — and our
+      `public/` is filename-identical to ewc's, so ewc's fix needs no new binaries. Took ewc's
+      structure only, not its branding. Also relative-ised the `shortcut icon`, which rendered
+      `undefined/favicon.ico` under `yarn build` (see `LEFTOVERS §1.2`). Verified in the compiled
+      bundle. **Same item as §8 below — one fix closes both.**
 
 ### ⚠️ One pep change is NOT safe to port as-is
 
@@ -887,7 +894,9 @@ inherited a complete integration and had nothing to fix in it.
 - [ ] **Two-step form dead end** — see the gfeai frontend list; ewc fixed it too.
 - [ ] **`DATE_COLS` in the guest export point at the wrong columns** — folded into the export
       mechanism job above.
-- [ ] **Favicon tags reference three assets that do not exist** in the repo.
+- [x] **Favicon tags reference three assets that do not exist** in the repo. **Done** — `P033.45`,
+      frontend `97700e7`. Duplicate of the pep favicon item in §6; ewc's own fix is the one that was
+      ported, because ewc's asset set matches ours exactly.
 
 ---
 
