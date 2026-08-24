@@ -476,8 +476,21 @@ most of the high-severity list.
 
 ### Missing features
 
-- [ ] **Add an `is_sent` filter** to the invitations listing (backend + admin). gfeai `12f6a62` /
-      `7effa14`.
+- [x] **Add an `is_sent` filter** to the invitations listing (backend + admin). gfeai `12f6a62` /
+      `7effa14`. **Done** — `P033.50`, backend `dc42aaa` + admin `8f79f11`, with
+      `InvitationIsSentFilterTest` (3 tests). Gated on **`filled()`, not `has()`**: the admin sends
+      every filter key on each search, so an untouched dropdown arrives as `?is_sent=` and
+      `boolean('')` is `false` — under `has()` the listing would quietly show unsent invitations
+      only, a working-looking filter nobody set. gfeai flagged this in their own commit; it is the
+      same trap as `LEFTOVERS §2.10`. **The test was verified to catch it** — flipping the line to
+      `has()` fails the cleared-dropdown case while the other two pass.
+      ⚠️ The neighbours `is_active` and `usage_status` **still use `has()` and still carry the
+      defect** (`?is_active=` filters to inactive only, `?usage_status=` returns nothing).
+      Deliberately not fixed here — that is the `LEFTOVERS §2.10` batch, which wants deciding
+      alongside the admin's `String(value?.value)` bug so it can be verified end to end.
+      No new translation keys: `web:is_sent`, `web:yes`, `web:no` already exist in EN **and** AR.
+      `routes/api.php` untouched — a query parameter on an existing endpoint, so no mobile-contract
+      impact.
 - [ ] **E-visa bulk download** — selected / filtered / all pages / in-progress only, as one zip.
       Today "Download all" fires one browser download per guest and browsers block the burst.
       Paired backend + admin job. gfeai `01582a2`, `2f917ec`, `48b8578`, `528c977`, `b6b84b9`.
