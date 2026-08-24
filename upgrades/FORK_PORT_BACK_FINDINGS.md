@@ -367,7 +367,13 @@ most of the high-severity list.
       update with Arabic names, the resource round-trip, and `order: null`. Unfixed, three of four
       fail — the passing one is the update-encoding case, consistent with the correction above.
 
-- [ ] **Export column letters point at the wrong columns.**
+- [x] **Export column letters point at the wrong columns.** **Done (letters only)** — `P033.33`
+      (`fa4f4a8`, the `InvitationsExport` crash) and `P033.34` (`817742c`, the guest-export date
+      columns), plus `ExportColumnAlignmentTest` — our first export test. **The headings-lookup
+      mechanism was explicitly declined**, not forgotten: it would rewrite all 28 classes in
+      `app/Exports/` to close a fault that only ever affected 4. Parked in `LEFTOVERS §2.9`.
+      Original item text below, kept for the record — note its "port the mechanism, not corrected
+      letters" instruction is the part that was overruled.
       Not "fragile" — already wrong. `GuestsExport.php:36-39` has `DATE_COLS = ['S','W']` labelled
       "Printed At / Created At", but S is *Source* and W is *Reconfirmed Will Attend*. The real date
       columns are M, Q, X. Same in `GuestsExportGuestView.php`, `GuestsExportView.php`, and
@@ -647,9 +653,20 @@ most of the high-severity list.
 
 - [x] **Fix the always-500 offline scanner endpoint** and the dead dinner filter — see section 4.
 - [x] **Write `checked_in_at` on gate check-in** — see section 4.
-- [ ] **Fix the seating chair overlap.** The seating app draws chairs on top of each other at every
+- [x] **Fix the seating chair overlap.** ~~The seating app draws chairs on top of each other at every
       table corner — 0px apart on U-shape tables, 55.1px apart for a 56px chair on rectangles once
-      `headSeats >= 2`. pep `8c39930`.
+      `headSeats >= 2`.~~ pep `8c39930`. **Done** — `P033.44`, seating `9823552`.
+      Measured before/after against the real chair size: U-shape `head >= 2` **0.0px → 45.3px**,
+      U-shape `head = 1` 50.0 → 59.4, rect `headSeats 2-3` 55.1 → 70.0, rect `headSeats 1/4`
+      60.1 / 67.4 → 70.0. Two corrections to this item as written:
+      **(1)** the rectangle was never overlapping — `ELEMENT_DEFAULTS.chair.width` is **46**, not 56,
+      in both this repo and pep's (pep's own code comment repeats the wrong 56px figure), so at
+      55.1px there was ~9px of clearance. That half is a spacing improvement, not a bug fix.
+      **(2)** the U-shape bug is real and exactly as described — two chairs computed on the identical
+      point. Residual, deliberately left: U-shape corners now sit at 45.3px against a 46px chair, so
+      adjacent chairs *touch* rather than stack; closing that means changing `seatGap` or the corner
+      rule, a visual-design call rather than a bug fix. Only `src/utils/layout.js` was taken —
+      `8c39930` bundles the unrelated `admins.is_vip` flag, which stays a separate item below.
 - [ ] **`GuestSeatingObserver`** — sends seat-assigned, seat-changed and check-in notifications
       across all three channels, with bulk-send suppression and previous-seat capture in the same
       UPDATE. Needs a `guests.previous_seat` column. pep `c941802`. *(Large.)*

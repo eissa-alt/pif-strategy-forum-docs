@@ -189,6 +189,27 @@ return the category's allowed residency statuses from the API so a category can 
 The second is a small feature; the first is cleanup. Doing neither leaves a prop that looks
 configurable and is not.
 
+### 2.9 Export column letters: the headings-lookup mechanism was declined
+
+The findings doc asked to **"port the mechanism, not corrected letters"** — a headings-based lookup
+(gfeai `5c39fd8` / `7ce4225`) replacing hardcoded column letters across `app/Exports/`.
+
+**Decided against, 2026-08-23.** The corrected letters shipped instead (`P033.33`, `P033.34`) with
+`ExportColumnAlignmentTest` pinning them. Reasoning: **28 classes use hardcoded letters; 4 were
+wrong.** A lookup rewrites all 28 to fix 4, and each rewrite is a chance to introduce the same
+class of fault in a class that was previously correct — with no test coverage on the other 24 to
+catch it. The alignment test closes the regression risk far more cheaply.
+
+**Revisit when** an export gains or loses a column and the letters drift again, or when the other
+24 classes get test coverage. At that point the lookup becomes cheap and the argument flips.
+
+**If picking this up:** the four that were wrong were `GuestsExport`, `GuestsExportGuestView`,
+`GuestsExportView` and `InvitationsCollectionsWithInvitationsExport`. `COL_TITLE_FROM='Z'` in the
+last one ran the title converter over *genders* and blanked them — the most damaging of the four,
+because it silently destroyed data in the output rather than mislabelling it.
+
+---
+
 ## 3. Cosmetic / hygiene
 
 ### 3.1 `anchor` on Headless UI panels (dropdown clipping)
@@ -237,8 +258,6 @@ consequences, both pre-existing and untouched by `P033.25`:
 is the caller-layer half: four files, and it needs a per-endpoint decision on accepted types rather
 than a blanket rule. Note `'jpeg'` in `ALLOWED_EXTENSIONS` is also dead — normalization turns
 `jpeg` into `jpg` before the `in_array`, so it can never match. Cosmetic.
-
----
 
 ## 4. Verification owed
 
