@@ -763,6 +763,16 @@ inherited a complete integration and had nothing to fix in it.
       actually resolve, each tagged `scope: both | invitation | guest`.
 - [ ] **`whatsapp-templates-form.tsx` (+73)** — replaces the free-text comma list. Today a typo
       ships a literal variable name to Meta with nothing flagging it.
+- [x] **WhatsApp → Config admin screen** *(replaces the `/conference` link item — see the section
+      header).* **DONE — admin `edfa1f7`.** The screen for the `whatsapp_configs` singleton: form,
+      types, route, sidebar entry above provider-configs (content before credentials, no
+      `superOnly`), and 12 EN + 12 AR keys at 1790/1790 parity. Without it the table stays empty by
+      design and all 12 variables render blank.
+      Two deviations from pep `152d8a0`: the page wrapper follows our
+      `checkFeaturePermission` convention rather than pep's bare `withAuth`, and the component's
+      `mode: 'config'` prop — a single-valued union guarding an always-true branch — was dropped
+      rather than imported as fresh dead input. `check:rbac` green at 33 links.
+
 - [ ] **`notification-event-fields.tsx` (new, 128 lines)** — WhatsApp as one of the three channels.
 - [ ] **`categories-form.tsx` (+118)** — seating events (`on_check_in`, `on_seat_assigned`,
       `on_seat_changed`), each with `whatsapp: { enabled, whatsapp_template_id }`.
