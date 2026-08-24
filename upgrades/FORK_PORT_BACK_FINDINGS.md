@@ -662,8 +662,21 @@ most of the high-severity list.
 - [ ] **`admins.preferences` column + `GET/PUT /admin/me/preferences`.**
       ⚠️ **pep's routes have no `auth.admin` middleware**, so a mobile guest token can reach an
       admin write. Add it when porting.
-- [ ] **Fix the offline-sync foreign key bug.** The round-trip writes an email string back into
+- [x] **Fix the offline-sync foreign key bug.** The round-trip writes an email string back into
       `scanned_by`, which is a UUID foreign key. pep touches this method without fixing it.
+      **DONE — backend `dc6eeb9`.** ⚠️ **Not a data-integrity nit — a hard 500.** Root cause
+      captured: `SQLSTATE[23000]: Integrity constraint violation: FOREIGN KEY constraint failed —
+      update "guests" set … "scanned_by" = gate@example.com`. A first-ever scan passes because
+      `scannedBy` is null; **every subsequent sync fails**, and draining repeat scans is the whole
+      point of the endpoint.
+      Four fixes in one: `scanned_by` now comes from the **token**, never the payload (the scanner
+      *is* the authenticated admin — `attend()` already did it this way); **validation added**, there
+      was none at all; `checked_in_at` mirrored as `attend()` does since `P033.5`, **only ever set,
+      never cleared** so a sync reporting no check-in cannot erase a real one; and
+      `check_in_count` stays client-supplied *on purpose* — the device counted scans while offline —
+      now validated `integer|min:0`.
+      First coverage for the endpoint (5 tests); without the fix 4 of 5 fail, three with 500s.
+      Mobile contract checked: absent from `docs/mobile/`, response shape unchanged.
 - [ ] **`withoutNotifications` wrapper** for bulk drains — generic suppression so a bulk sync does
       not fire a notification per row. pep `c941802`.
 - [ ] **WhatsApp: full set — see section 7.**
