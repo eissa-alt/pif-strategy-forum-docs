@@ -542,8 +542,16 @@ most of the high-severity list.
       We do not read `.env`; check it on the real deploy. See `LEFTOVERS §4`.
 - [ ] **Multi-file upload input** with in-browser image downscaling. gfeai `df4c152`.
 - [ ] **Searchable guest-type picker** instead of an unbounded card list. gfeai `c127e36`.
-- [ ] **Per-option help text on radio groups** — `custom-radio-input.tsx` can only show one shared
-      label and only lays out horizontally. gfeai `03d2411`.
+- [x] **Per-option help text on radio groups** — `custom-radio-input.tsx` can only show one shared
+      label and only lays out horizontally. gfeai `03d2411`. **Done** — `P033.52`, admin `f897b89`.
+      `CustomRadioInput` takes an optional per-option `description` and stacks vertically **only when
+      descriptions are present**, so every other radio group is untouched. Our file was verified
+      byte-identical to gfeai's pre-image first, so it is a clean port rather than a merge.
+      **Translations:** the two new keys are a decomposition of our *existing* `usage_type_help`
+      text — the AR `single` string is a verbatim match of our AR's first clause. gfeai's `multiple`
+      string adds "up to the number of uses you set" in both languages, which the old copy never
+      said. `usage_type_help` was **removed rather than orphaned** (gfeai left it behind unused; it
+      had exactly one consumer here). EN/AR key sets verified identical in both directions.
 - [ ] **Scroll hint on listing tables.** ~~Every listing is a fixed 1120px table; on a laptop the
       Actions column (Edit/Delete) is off-screen with nothing indicating it.~~ **47 components import
       `ListingTable`** — one edit fixes all of them. gfeai `cd0a861`.
