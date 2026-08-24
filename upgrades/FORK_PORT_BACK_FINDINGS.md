@@ -695,9 +695,45 @@ inherited a complete integration and had nothing to fix in it.
 
 **11 files across 5 commits** (`9b71528`, `976ae89`, `c941802`, `4633938`, `57218c4`, `fd41aed`):
 
+> ### ⚠️ This section was written 2026-08-06 and pep has since redesigned it
+>
+> **pep replaced the conferences coupling on 2026-08-18** (`f289299` backend, `152d8a0` admin):
+> a new **`whatsapp_configs` singleton** owns the event copy, and the renderer resolves `app_name`,
+> `event_name`, `event_date`, `event_datetime`, `venue` and `venue_url` from **that** table —
+> explicitly so *"WhatsApp owns its event copy rather than borrowing the mobile CMS's."*
+>
+> **We ported the new design, not the one described below** (`P033.39`). Consequences:
+> - The renderer item below is **done differently** — see its entry.
+> - **The `/conference` sidebar item is now moot.** It was listed only because the conferences page
+>   fed `app_name`/`event_date`/`venue`. It no longer does. The owner had already closed that item
+>   as won't-do (section 10), and pep independently did the same thing (admin `eaa0fb8`,
+>   *"Hide the conference link from the sidebar"*).
+> - The **admin screen** item changes shape: it is now a WhatsApp → Config screen for the singleton,
+>   not a conferences link.
+>
+> **Also found while checking: pep shipped a security batch on 2026-08-16 that this audit predates**
+> — four pentest fixes (`SEC-P4/H01–H04`: forgot-password timing, per-address rate limiting, a
+> forced-500 debug hook, health-endpoint disclosure). **H02 we had already fixed independently**
+> (`afd4eee`). **Owner decision 2026-08-24: hold the batch until pep's remediation is fully closed**
+> before porting. Not tracked as items here yet.
+
 **Backend**
 
-- [ ] **`WhatsAppTemplateRenderer.php` (+111 lines)** — adds 11 new variables:
+- [x] **`WhatsAppTemplateRenderer.php` (+111 lines)** — adds 11 new variables:
+      **DONE — backend `959010c`, against pep's CURRENT design.** Added a `whatsapp_configs`
+      singleton + `GET`/`PUT admin/whatsapp-config` (gated on the existing `whatsapp_config`
+      feature) and resolved **12** variables from it: `app_name`, `event_name`, `event_date`,
+      `event_start_date`, `event_end_date`, `event_datetime`, `venue`, `venue_url`, `seat_number`,
+      `table_number`, `seat_label`, `checkin_time`.
+      **Not ported: `previous_seat_number` / `previous_table_number` / `previous_seat_label`** —
+      they read a `guests.previous_seat` column we do not have, so they could only render blank.
+      They belong with `GuestSeatingObserver` (section 6), which adds that column.
+      pep's **241-line test suite ported and passes unmodified** (11 tests). Design points kept: the
+      table ships empty, `show()` creates the row so the form has an id to PUT to, the send path uses
+      a plain `first()` so resolving a variable never writes to the DB, and an unset field renders as
+      a blank slot rather than the literal variable name. 532 tests pass.
+      ⚠️ `whatsapp_configs` (event copy) is one word from `whatsapp_provider_configs` (Meta
+      credentials) — warned about in both the migration and the routes.
       - `app_name` — reads `app_name_en` / `app_name_ar` from the `conferences` row, falls back to
         `config('app.name')`. Memoised. Resolves for real even in a test send, so an admin checking
         credentials sees the actual name.
@@ -731,8 +767,12 @@ inherited a complete integration and had nothing to fix in it.
 - [ ] **`categories-form.tsx` (+118)** — seating events (`on_check_in`, `on_seat_assigned`,
       `on_seat_changed`), each with `whatsapp: { enabled, whatsapp_template_id }`.
 - [ ] **`interfaces/category.tsx` (+38)** — the types.
-- [ ] **`data/sidebar-links.tsx` (+20)** — the `/conference` link. The conferences page feeds
-      `app_name`, `event_date` and `venue`, so it has to be reachable once the renderer work lands.
+- [x] ~~**`data/sidebar-links.tsx` (+20)** — the `/conference` link.~~ **MOOT — not needed.** It was
+      listed only because the conferences page fed `app_name` / `event_date` / `venue`. After
+      `P033.39` it does not: WhatsApp reads its own `whatsapp_configs` singleton. The owner closed
+      the sidebar item as won't-do (section 10) and pep independently hid the same link
+      (admin `eaa0fb8`). The conferences row remains the **mobile app's** config, edited via
+      `/conference` by direct URL.
 - [ ] **Translations EN + AR** — 4 keys: `body_variables_add`, `_empty`, `_custom`, `_unsupported`.
 
 ---
