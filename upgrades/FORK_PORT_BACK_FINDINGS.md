@@ -921,8 +921,10 @@ inherited a complete integration and had nothing to fix in it.
       (`CountriesSelectResources`) and the frontend select carried it in `raw: c`, just untyped.
 - [x] **Two-step form dead end** — see the gfeai frontend list; ewc fixed it too. **Done** —
       `P033.46`, frontend `f4cb529`. Same item as §5; one fix closes both.
-- [ ] **`DATE_COLS` in the guest export point at the wrong columns** — folded into the export
-      mechanism job above.
+- [x] **`DATE_COLS` in the guest export point at the wrong columns** — folded into the export
+      mechanism job above. **Done** — `P033.34`, backend `817742c`: `DATE_COLS` is now `M`, `Q`, `X`
+      (Printed At · Created At · Reconfirmed At) in both `GuestsExport` and `GuestsExportGuestView`,
+      pinned by `ExportColumnAlignmentTest`. Same fix as the §1 export item.
 - [x] **Favicon tags reference three assets that do not exist** in the repo. **Done** — `P033.45`,
       frontend `97700e7`. Duplicate of the pep favicon item in §6; ewc's own fix is the one that was
       ported, because ewc's asset set matches ours exactly.
