@@ -506,11 +506,27 @@ most of the high-severity list.
       tested and is blocked by Flysystem. 5 new regression tests; 498 pass.
       **Still open (pre-existing, logged in LEFTOVERS §3):** those four endpoints have **no request
       validation at all**, and `$dir` is built from unsanitised `moduleName`/`inputName`.
-- [ ] **Skip reCAPTCHA outside production** (opt back in with `RECAPTCHA_ENFORCE`). Local dev
-      currently cannot log in or register. gfeai `eafd3e4`.
-      ⚠️ That commit also reports that the backend's Google secret is Google's **test** secret and
-      does not match the site key the apps use. We could not verify this (we do not read `.env`) —
-      **please check before enforcing reCAPTCHA in production.**
+- [x] **Skip reCAPTCHA outside production** (opt back in with `RECAPTCHA_ENFORCE`). Local dev
+      currently cannot log in or register. gfeai `eafd3e4`. **Done** — `P033.49`, backend `492eb7a`,
+      with `ReCaptchaEnvironmentTest` (5 tests). **Two deliberate departures from gfeai:**
+      **(1) `local` only, not `! production`.** gfeai skips in every non-production environment,
+      `testing` included — that turns `ReconfirmationTest`'s `fakeRecaptchaPass()` into a no-op and
+      leaves the suite never exercising the verification path: green tests proving nothing. Their
+      commit message lists tests as a *reason* to skip. Scoping to `local` fixes the real complaint
+      without paying in coverage, and keeps **staging** enforcing.
+      **(2) `config()`, not `env()`.** gfeai put `env('RECAPTCHA_ENFORCE', false)` in the rule —
+      null under `config:cache`, and our PHPStan `noEnvCallsOutsideOfConfig` fails the build on it.
+      The key now sits in `config/services.php` beside `secret`. gfeai's other half — the
+      `?? false` guard — we already had.
+      The test pins what must not follow: `testing` still calls Google and honours a `false`, `local`
+      never reaches Google (`assertNothingSent`), `RECAPTCHA_ENFORCE=true` restores the challenge,
+      and **production and staging both still verify**.
+      ⚠️ **The secret warning is NOT closed and is prod-affecting.** gfeai reports the backend's
+      `GOOGLE_RECAPTCHA_SECRET` is Google's **test** secret (`6LeIxAcT…`), not matching the site key
+      the apps use (`6LeW02kq…`); siblings pair that site key with
+      `6LeW02kqAAAAAL3GDbr_MFN3y0rkb_uZ_LhjyppG`. If it holds here, **production reCAPTCHA accepts
+      everything** — the test secret passes any token. `P033.49` does not affect this either way.
+      We do not read `.env`; check it on the real deploy. See `LEFTOVERS §4`.
 - [ ] **Multi-file upload input** with in-browser image downscaling. gfeai `df4c152`.
 - [ ] **Searchable guest-type picker** instead of an unbounded card list. gfeai `c127e36`.
 - [ ] **Per-option help text on radio groups** — `custom-radio-input.tsx` can only show one shared
