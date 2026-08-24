@@ -847,9 +847,8 @@ most of the high-severity list.
       callback cannot leave notifications off, and nests safely. Applied to `guestsSyncOffline`; the
       import needs no wrapper because it creates rather than updates.
 - [ ] **WhatsApp: full set — see section 7.**
-- [ ] **`NotificationEventFields`** — renders one notification event's three channels (email, SMS,
-      WhatsApp) as a reusable block. Today `categories-form.tsx` hand-writes ~500 lines for three
-      events; adding a fourth means copying it all again. pep `fd41aed`.
+- [x] **`NotificationEventFields`** — **Done** as part of `P033.59` (admin `53ea733`); same
+      component as the §7 item, one change closes both.
 - [x] **`admins.is_vip` flag** — independent of role. Small migration + form toggle + a live-resolved
       `actor_is_vip` on the seating audit log, highlighted in the seating app's notification panel.
       **Done across all three repos** — backend `P033.54` (`0e8b019`), admin `P033.55` (`19bf242`),
@@ -993,11 +992,30 @@ inherited a complete integration and had nothing to fix in it.
       `mode: 'config'` prop — a single-valued union guarding an always-true branch — was dropped
       rather than imported as fresh dead input. `check:rbac` green at 33 links.
 
-- [ ] ⛔ **`notification-event-fields.tsx` (new, 128 lines)** — WhatsApp as one of the three channels.
-      **BLOCKED on `GuestSeatingObserver` (section 6).**
-- [ ] **`categories-form.tsx` (+118)** — seating events (`on_check_in`, `on_seat_assigned`,
-      `on_seat_changed`), each with `whatsapp: { enabled, whatsapp_template_id }`.
-- [ ] ⛔ **`interfaces/category.tsx` (+38)** — the types. **BLOCKED on `GuestSeatingObserver`.**
+- [x] **`notification-event-fields.tsx` (new, 128 lines)** — WhatsApp as one of the three channels.
+      ~~**BLOCKED on `GuestSeatingObserver` (section 6).**~~ **Unblocked by `P033.58` and done** —
+      `P033.59`, admin `53ea733`.
+- [x] **`categories-form.tsx` (+118)** — seating events (`on_check_in`, `on_seat_assigned`,
+      `on_seat_changed`), each with `whatsapp: { enabled, whatsapp_template_id }`. **Done** —
+      `P033.59`, admin `53ea733`.
+      ⚠️ **Easy to miss:** pep extends `NOTIFICATION_EVENTS` to all six **and** adds `SEATING_EVENTS`.
+      That is not redundancy — `NOTIFICATION_EVENTS` drives the **normaliser**, so adding only
+      `SEATING_EVENTS` renders the fields but silently drops them on load and save. Both applied.
+      🔴 **This commit is the switch.** Everything in `P033.58` is dormant until a category
+      configures one of these events; from here, ticking a box and picking a template sends real
+      messages.
+- [x] **`interfaces/category.tsx` (+38)** — the types. ~~**BLOCKED on `GuestSeatingObserver`.**~~
+      **Done** — `P033.59`, admin `53ea733`. Added as a shared `NotificationEventChannels` alias
+      rather than a fourth, fifth and sixth copy of the same inline shape.
+      ⚠️ **SCOPE CALL — pep's *current* design was deliberately NOT taken.** pep has two commits on
+      this component: `fd41aed` (128 lines, guest-only) and the later `0c7f788` / `5ab0380`, which
+      grew an **admin-notifications** half — admin copies per event,
+      `Category::getAdminNotificationTemplate()`, per-admin subscriptions, attendance preference,
+      guest change requests. The standing instruction for §7 was to port pep's current design; this
+      does not, because our backend has no `getAdminNotificationTemplate` and `P033.58` is pep's
+      guest-only observer. Porting their HEAD would put admin switches in the UI that **nothing
+      could ever act on** — the trap this section's own blocking note raised. **pep's admin
+      notification layer remains an unported, separate feature.**
 
 > ### ⛔ The last three section 7 items are blocked on section 6, not merely unstarted
 >
