@@ -541,7 +541,23 @@ most of the high-severity list.
       everything** — the test secret passes any token. `P033.49` does not affect this either way.
       We do not read `.env`; check it on the real deploy. See `LEFTOVERS §4`.
 - [ ] **Multi-file upload input** with in-browser image downscaling. gfeai `df4c152`.
-- [ ] **Searchable guest-type picker** instead of an unbounded card list. gfeai `c127e36`.
+- [x] **Searchable guest-type picker** instead of an unbounded card list. gfeai `c127e36`.
+      **Done — with a caveat: it is a bounded dropdown, NOT searchable.** `P033.53`, admin `bd4bc2a`.
+      Our `CustomSelect` is a re-export of the Headless UI `ui-select` primitive (migrated off
+      react-select), and its interface marks `isSearch` / `isLoading` as *"accepted and ignored —
+      no-ops on Headless UI"*: both are declared in the type and **never referenced in the component
+      body**. gfeai passes both; here they would be dead props, so they are not passed. What ships is
+      a bounded dropdown with Listbox **typeahead** (type letters to jump) — it solves the real
+      problem, the unbounded list, but is not a filter box. **Real search would mean adding a
+      Combobox path to `ui-select`, which affects every select in the admin** — that is the follow-up
+      if search is actually wanted.
+      **Kept our `useFetch`:** our file is *ahead* of gfeai's pre-image (they hand-roll
+      `useState`/`useEffect`/`Axios` against `/categories-select`), so only the UI change was applied
+      — taking their post-image would have regressed the refactor and changed the endpoint.
+      The `/${lang}` prefix is load-bearing: `i18n/link.tsx` adds it inside `NextLink`, and
+      `router.push` does not, so dropping the link means writing it out or every navigation 404s.
+      No new keys — reused `web:select`. **Not ported** from the same commit: a Questionnaire heading
+      across six gfeai-only form shapes, and their religion-key trimming (project data).
 - [x] **Per-option help text on radio groups** — `custom-radio-input.tsx` can only show one shared
       label and only lays out horizontally. gfeai `03d2411`. **Done** — `P033.52`, admin `f897b89`.
       `CustomRadioInput` takes an optional per-option `description` and stacks vertically **only when
