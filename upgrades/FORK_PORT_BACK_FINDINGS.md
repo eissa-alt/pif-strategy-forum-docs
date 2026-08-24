@@ -779,9 +779,26 @@ most of the high-severity list.
       adjacent chairs *touch* rather than stack; closing that means changing `seatGap` or the corner
       rule, a visual-design call rather than a bug fix. Only `src/utils/layout.js` was taken —
       `8c39930` bundles the unrelated `admins.is_vip` flag, which stays a separate item below.
-- [ ] **`GuestSeatingObserver`** — sends seat-assigned, seat-changed and check-in notifications
+- [x] **`GuestSeatingObserver`** — sends seat-assigned, seat-changed and check-in notifications
       across all three channels, with bulk-send suppression and previous-seat capture in the same
-      UPDATE. Needs a `guests.previous_seat` column. pep `c941802`. *(Large.)*
+      UPDATE. Needs a `guests.previous_seat` column. pep `c941802`. *(Large.)* **Done** — `P033.58`,
+      backend `85c54ff`, with `GuestSeatingObserverTest` (15 tests) + an end-to-end drain test.
+      ✅ **IT SHIPS INERT — the finding that changes the risk picture.** Our categories know only
+      four events (`on_accept`, `on_register`, `on_register_complete`, `on_reject`); the three
+      seating events are **new**, so `getNotificationTemplate` returns `null` on every channel and
+      **nothing dispatches until an admin configures them** — i.e. until the §7 `categories-form.tsx`
+      item lands. The "bulk import messages 400 guests" failure mode cannot happen on day one.
+      **Reach traced, not assumed:** `checked_in_at` has exactly two writers — `attend()` (live scan,
+      *should* notify) and `guestsSyncOffline` (drain, suppressed). The Excel import calls
+      `Guest::create`, and the observer hooks `updating`/`updated` only, so creates cannot trigger it
+      (pinned by a test). `Guest::query()->update(...)` bypasses Eloquent events entirely.
+      **pep's diff did not apply** — they wrap `guestsSyncOffline`, which `P033.43` had already
+      rewritten to fix the FK bug, so the concept was applied to our version.
+      Both suppression paths are **proven**: removing the wrapper fails the drain test; suppression
+      survives a throwing callback and nests without an inner call re-enabling an outer one.
+      Beyond pep — whose observer has **no test at all** — the suite covers the "must not fire" half:
+      inert by default, master channel gate, clearing a seat, editing an unrelated field, a second
+      check-in, and creating an already-seated guest.
 - [ ] **Per-admin filter visibility.** One button on the filter row opens a picker; each admin hides
       the filters they never use. Stored on `admins.preferences`, keyed by route, so it follows them
       to another device. Saves *hidden* keys, so filters added later stay visible by default.
@@ -824,8 +841,11 @@ most of the high-severity list.
       now validated `integer|min:0`.
       First coverage for the endpoint (5 tests); without the fix 4 of 5 fail, three with 500s.
       Mobile contract checked: absent from `docs/mobile/`, response shape unchanged.
-- [ ] **`withoutNotifications` wrapper** for bulk drains — generic suppression so a bulk sync does
-      not fire a notification per row. pep `c941802`.
+- [x] **`withoutNotifications` wrapper** for bulk drains — **Done** as part of `P033.58`
+      (`85c54ff`), since shipping the observer without it was the genuinely risky ordering. Static
+      flag on `GuestSeatingObserver`, restores the previous state in a `finally` so a throwing
+      callback cannot leave notifications off, and nests safely. Applied to `guestsSyncOffline`; the
+      import needs no wrapper because it creates rather than updates.
 - [ ] **WhatsApp: full set — see section 7.**
 - [ ] **`NotificationEventFields`** — renders one notification event's three channels (email, SMS,
       WhatsApp) as a reusable block. Today `categories-form.tsx` hand-writes ~500 lines for three
