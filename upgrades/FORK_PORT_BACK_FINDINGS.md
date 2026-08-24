@@ -812,8 +812,27 @@ most of the high-severity list.
 - [ ] **`NotificationEventFields`** — renders one notification event's three channels (email, SMS,
       WhatsApp) as a reusable block. Today `categories-form.tsx` hand-writes ~500 lines for three
       events; adding a fourth means copying it all again. pep `fd41aed`.
-- [ ] **`admins.is_vip` flag** — independent of role. Small migration + form toggle + a live-resolved
+- [x] **`admins.is_vip` flag** — independent of role. Small migration + form toggle + a live-resolved
       `actor_is_vip` on the seating audit log, highlighted in the seating app's notification panel.
+      **Done across all three repos** — backend `P033.54` (`0e8b019`), admin `P033.55` (`19bf242`),
+      seating `P033.56` (`793e244`), with `AdminIsVipTest` (4 tests).
+      ⚠️ **Unbundled from pep `c941802`, which is the SAME commit as `GuestSeatingObserver` and
+      `admins.preferences`** — three separate items in one commit, 15 files, +438, and it touches
+      `routes/api.php` for the preferences endpoints. Only the `is_vip` slice was taken; the observer,
+      `previous_seat` and `preferences` remain their own items below. The seating half came from
+      `8c39930`, the same commit whose `layout.js` shipped as `P033.44` — **that commit is now fully
+      accounted for.**
+      **`has()`, not `filled()`** on the update branch — deliberately the opposite of `P033.50`: for
+      a boolean *body* field `filled()` is false when the value is `false`, which would make the flag
+      impossible to turn off.
+      **`actor_is_vip` is resolved live, not snapshotted** (pep's design): `actor_name` / `actor_role`
+      are frozen so an entry keeps naming the right person after a rename, but VIP is a *current*
+      property, so flagging someone lights up work they already did. The test pins exactly that.
+      `->with('admin:id,is_vip')` added so the listing does not fire a query per row.
+      Two near-misses caught by verifying rather than assuming: `reset(d)` in the admin form would
+      have **silently cleared the flag on every save of every admin** had the resource not been
+      updated; and the seating classnames were checked in the **built CSS**, because Tailwind purges
+      what it cannot statically see and a dynamic classname would have rendered nothing.
 - [ ] **Seat/table number in the default see-more panel** — present only on the RSVP shape today.
 - [x] **Favicon components reference three assets that are not in `public/`**, while the real ones
       go unreferenced. **Done** — `P033.45`, frontend `97700e7`. `favicon-32x32.png`,
