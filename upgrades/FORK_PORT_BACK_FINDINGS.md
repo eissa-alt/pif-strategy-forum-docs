@@ -1019,10 +1019,33 @@ Found by auditing our code directly. No fork comparison could have surfaced them
       scanner read them. *Raised 2026-08-08 while doing section 4's `checked_in_at` item.* Not a
       quick win: needs a migration, an admin/reports sweep and scanner sign-off.
 - [ ] **20 export classes duplicate the same row-number binder** with no shared trait.
-- [ ] **`composer.lock` is untracked in all four backend repos.** Every clone's `composer install`
+- [x] **`composer.lock` is untracked in all four backend repos.** Every clone's `composer install`
       resolves fresh versions. Non-reproducible builds, and no supply-chain pinning — which sits
       awkwardly next to the OWASP hardening this baseline advertises. *(No fork fixes this either;
-      noting it as a decision to make.)*
+      noting it as a decision to make.)* **Done for this repo** — `P033.48`, backend `c32fe3b`.
+      Removed from `.gitignore` and committed (182 packages). The three clone repos are separate git
+      repos outside this baseline and are untouched.
+      ⚠️ **An update had to come first, and it inverts the obvious answer:** with no lock,
+      `composer install` behaves like `composer update` and resolves fresh — so committing the
+      Jul-8 lock as-is would have *downgraded* every future clone into vulnerabilities that fresh
+      resolution already avoids. `composer audit` found **17 advisories across 4 packages**; three
+      were fixable inside the existing constraints — guzzle `7.12.1→7.15.5` (7), psr7
+      `2.12.1→2.13.1` (1), commonmark `2.8.2→2.10.0` (6), plus 4 transitive. **17 → 3.**
+      `composer.json` is byte-unchanged, so this is minor-within-major per `CLAUDE.md` rule 6; no
+      constraint was widened. Note `composer outdated` misleads here — it reported guzzle as
+      `~ 8.1.0` and never revealed 7.15.5 inside `^7.12.0`; only the audit's affected-version ranges
+      were reliable. Lock checked for credentials before committing: all dist URLs on
+      `api.github.com`, no private sources, no token-like strings.
+      **Consistency:** admin/frontend already track `yarn.lock` and seating `package-lock.json` —
+      the backend was the only one ignoring its own.
+- [ ] **Bump `phpoffice/phpspreadsheet` off the 1.x line — 3 high advisories, needs its own branch.**
+      Left behind by `P033.48`. `1.30.5` is the ceiling of `^1.30.5` and the whole 1.x line is
+      affected: SSRF via an HTTP redirect bypassing the `WEBSERVICE()` domain whitelist
+      (`CVE-2026-59931`), plus two memory-exhaustion advisories. Fixes start at **2.1.18**, a major
+      bump — gated by `CLAUDE.md` rule 6. It is also pulled by `maatwebsite/excel ^3.1`, so the bump
+      likely drags Excel with it, and **28 classes in `app/Exports/` ride on that** (see the export
+      column-letters item in §1 and `LEFTOVERS §2.9`). Sequence it after, or together with, any
+      export work.
 - [ ] **Admin, frontend and seating have zero automated tests, and there is no CI in any of the 18
       repos.** The backend has 24 feature test files. Most of the bugs in this document are
       client-side, where we have no coverage at all.
