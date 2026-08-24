@@ -169,11 +169,14 @@ embassies.
 **A complete implementation was written and then discarded on owner instruction** (2026-08-12), not
 because it was wrong — gates were green — but to defer the visual change. It is recoverable:
 
-- patch: `scratchpad/P033.26-render-assets.patch`
-- new config file: `scratchpad/P033.26-config-assets.php`
+- ~~patch: `scratchpad/P033.26-render-assets.patch`~~
+- ~~new config file: `scratchpad/P033.26-config-assets.php`~~
 
-⚠️ **Scratchpad is session-scoped and will be cleaned up.** If this is not restored soon, treat the
-work as gone and redo it from this note.
+🔴 **GONE — confirmed 2026-08-24.** The scratchpad was session-scoped and has been cleaned up; the
+directory no longer exists and neither file is anywhere under `/private/tmp/claude-501`. **The work
+is lost and must be redone from this note.** The note below is now the only surviving record of what
+it did, which is why it is written in that much detail — treat it as the spec, not as a summary of a
+recoverable patch.
 
 What it did: a `config/assets.php` with 10 env-backed keys, all defaulting to **null**, with
 templates omitting the element when unset (except the 8 email shims, which are `height="0"` and
