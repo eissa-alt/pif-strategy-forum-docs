@@ -745,13 +745,27 @@ inherited a complete integration and had nothing to fix in it.
       - `seat_number`, `table_number`, `checkin_time` — from the guest row. `checkin_time` prefers
         `checked_in_at` and falls back to `check_in_time`.
       - All merged into **both** the invitation and guest send paths.
-- [ ] **`WhatsAppTemplatesSeeder.php` (new, 245 lines)** — 8 templates keyed on `purpose` via
+- [x] **`WhatsAppTemplatesSeeder.php` (new, 245 lines)** — 8 templates keyed on `purpose` via
       `updateOrCreate`, so re-running updates in place. **`is_active` mirrors the template's real
       status at Meta**, so nothing that would fail on send ships switched on. Its docblock also
       warns about a real trap: the webhook picks the post-RSVP follow-up by `purpose='qr'` +
       `latest()`, so two active rows make that a coin flip.
       *Port the structure; drop the `pep_*` rows, they are project content.*
-- [ ] **`DatabaseSeeder.php`** — register the seeder.
+- [x] **`DatabaseSeeder.php`** — register the seeder.
+      **Both DONE — backend `366a521`.** ⚠️ **Seeds ONE row, not nine.** pep's nine include eight
+      naming Meta templates owned by specific projects — `pep_*`, `intvitation_ar`, `ebadge_en`, and
+      **`qr_hci_en`, another ALT client's**. A Meta template name only resolves inside the WABA it
+      was approved in, so those rows are dead in any clone *and* carry another customer's naming
+      into the baseline — the same problem as section 9's hardcoded buckets. Three of them
+      (`seat_assigned`, `seat_changed`, `checkin`) also serve `GuestSeatingObserver`, which we do not
+      have. This item already said "drop the `pep_*` rows"; the same reasoning covers the rest.
+      What is seeded is the one universally true row: **`hello_world`**, which Meta ships in every
+      WABA — no variables, no buttons, no approval wait, the fastest proof that token + phone number
+      id + queue are wired. Projects add their own approved templates via WhatsApp → Templates.
+      ⚠️ **The coin-flip trap was verified against OUR code**, not inherited:
+      `WhatsAppWebhookController::qrTemplate()` uses the identical
+      `is_active` + `purpose='qr'` + `latest('created_at')` lookup, so the seeder deliberately
+      creates **no `qr` row**. Proven: seeding twice yields 1 row and 0 active `qr` rows.
 
 **Admin**
 
@@ -773,10 +787,28 @@ inherited a complete integration and had nothing to fix in it.
       `mode: 'config'` prop — a single-valued union guarding an always-true branch — was dropped
       rather than imported as fresh dead input. `check:rbac` green at 33 links.
 
-- [ ] **`notification-event-fields.tsx` (new, 128 lines)** — WhatsApp as one of the three channels.
+- [ ] ⛔ **`notification-event-fields.tsx` (new, 128 lines)** — WhatsApp as one of the three channels.
+      **BLOCKED on `GuestSeatingObserver` (section 6).**
 - [ ] **`categories-form.tsx` (+118)** — seating events (`on_check_in`, `on_seat_assigned`,
       `on_seat_changed`), each with `whatsapp: { enabled, whatsapp_template_id }`.
-- [ ] **`interfaces/category.tsx` (+38)** — the types.
+- [ ] ⛔ **`interfaces/category.tsx` (+38)** — the types. **BLOCKED on `GuestSeatingObserver`.**
+
+> ### ⛔ The last three section 7 items are blocked on section 6, not merely unstarted
+>
+> Checked 2026-08-24. `NotificationEventFields` has **exactly one call site** in pep —
+> `categories-form.tsx` inside `{SEATING_EVENTS.map(...)}`. pep did **not** refactor the existing
+> `on_register_complete` / `on_accept` / `on_reject` events; those stay hand-written. Its own comment
+> says so: *"seating trio is rendered by `<NotificationEventFields />`"*.
+>
+> So the component exists solely to render `on_check_in` / `on_seat_assigned` / `on_seat_changed` —
+> and those three events are fired **only** by `GuestSeatingObserver`, which this baseline does not
+> have (it needs a `guests.previous_seat` column). Porting them now would give an admin three
+> configurable notification events that **nothing can ever fire**.
+>
+> ⚠️ **This corrects the pitch made for these items**: the value was described as "removes ~500 lines
+> of duplication in `categories-form.tsx`". It does not — the duplication stays either way.
+>
+> **Do `GuestSeatingObserver` first, or leave these.**
 - [x] ~~**`data/sidebar-links.tsx` (+20)** — the `/conference` link.~~ **MOOT — not needed.** It was
       listed only because the conferences page fed `app_name` / `event_date` / `venue`. After
       `P033.39` it does not: WhatsApp reads its own `whatsapp_configs` singleton. The owner closed
