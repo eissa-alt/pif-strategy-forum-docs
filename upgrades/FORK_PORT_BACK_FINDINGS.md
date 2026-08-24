@@ -788,9 +788,27 @@ most of the high-severity list.
       **`ListingFilters` is used by 44 listings**, so they all get it with no call-site changes.
       The guests listing needed extra work — `FilterSlot` self-registers so its 24 hand-written
       filters appear in the picker too. pep `fd41aed`. *(Large.)*
-- [ ] **`admins.preferences` column + `GET/PUT /admin/me/preferences`.**
+- [x] **`admins.preferences` column + `GET/PUT /admin/me/preferences`.**
       ⚠️ **pep's routes have no `auth.admin` middleware**, so a mobile guest token can reach an
-      admin write. Add it when porting.
+      admin write. Add it when porting. **Done** — `P033.57`, backend `61a62a6`, with
+      `AdminPreferencesTest` (7 tests).
+      **The warning was correct and the guard was added.** Confirmed the exposure is real, not
+      theoretical: `Guest` uses `HasApiTokens` and the mobile app calls `createToken('mobile', …)`,
+      so every registered guest holds a token that satisfies our plain `auth:sanctum` group. Both
+      routes are wrapped in `auth.admin`, and **the guard is proven to be what blocks them** —
+      removing it fails `a_guest_token_cannot_reach_it`, restoring it passes.
+      This follows an existing convention rather than inventing one: `routes/api.php:960` already
+      guards the ported mobile-feature modules with `auth.admin` for the same reason.
+      **Rule 4 checked:** `routes/api.php` is touched, and `docs/mobile` has no mention of
+      `/admin/me` or `preferences` — new additive admin-guarded endpoints, no mobile impact.
+      Payload validated only as `['present','array']`: display choices with no security meaning, and
+      a fixed schema would mean a backend change per new preference.
+      🔎 A near-miss: the scoping test first appeared to show one admin reading another's bag. The
+      **database was probed directly before changing any code and was correct** — Laravel memoises
+      the resolved guard across requests inside one test method, so the second request reused the
+      first identity. Fixed with `forgetGuards()` in the test. The code was never wrong.
+      **pep `c941802` is now two-thirds consumed** (`is_vip` `P033.54`, `preferences` here);
+      `GuestSeatingObserver` + `guests.previous_seat` remain.
 - [x] **Fix the offline-sync foreign key bug.** The round-trip writes an email string back into
       `scanned_by`, which is a UUID foreign key. pep touches this method without fixing it.
       **DONE — backend `dc6eeb9`.** ⚠️ **Not a data-integrity nit — a hard 500.** Root cause
