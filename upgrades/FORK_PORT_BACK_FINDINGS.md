@@ -547,8 +547,19 @@ most of the high-severity list.
 - [ ] **Scroll hint on listing tables.** Every listing is a fixed 1120px table; on a laptop the
       Actions column (Edit/Delete) is off-screen with nothing indicating it. **46 components import
       `ListingTable`** — one edit fixes all of them. gfeai `cd0a861`.
-- [ ] **Show consumed uses / limit** on the invitations listing instead of a raw send count.
-      gfeai `5520a33`.
+- [x] **Show consumed uses / limit** on the invitations listing instead of a raw send count.
+      gfeai `5520a33`. **Done** — `P033.51`, admin `3688054`. Renders `uses / valid_up_to`.
+      **Admin-only — no backend change:** `InvitationResource` already exposes `uses`,
+      `valid_up_to` and `send_count`, `index()` genuinely returns that resource, and
+      `web:number_of_use` already exists in EN and AR. Dropped gfeai's `?? 0` / `?? '-'` fallbacks —
+      both columns are `unsignedInteger NOT NULL DEFAULT 0`, so neither can fire.
+      ⚠️ **Consequence:** this removes the **only** place invitation `send_count` is visible in the
+      admin — every other `send_count` in the codebase is `issued_visa_send_count`, an unrelated
+      field on guests, and no see-more panel shows it. `send_count` and `uses` are different facts:
+      how many times someone was *chased* versus how many times the invitation was *consumed*. The
+      item's wording ("instead of") and gfeai both call for the replacement, so that is what shipped;
+      the field remains in the API and the TS interface, so restoring the column is two lines if the
+      chase count matters operationally.
 - [ ] **Bulk guest hard-delete by email list**, with preview and a workbook export. Operator tool.
       gfeai `e1273d4`, `c4dfcbc`, `382b13d`.
 - [x] **Tests we do not have:** first coverage for the invitation store endpoint and the guest
