@@ -522,8 +522,20 @@ most of the high-severity list.
       gfeai `5520a33`.
 - [ ] **Bulk guest hard-delete by email list**, with preview and a workbook export. Operator tool.
       gfeai `e1273d4`, `c4dfcbc`, `382b13d`.
-- [ ] **Tests we do not have:** first coverage for the invitation store endpoint and the guest
-      listing filters. gfeai `4d4fed0`, `6622fcc`.
+- [x] **Tests we do not have:** first coverage for the invitation store endpoint and the guest
+      listing filters. gfeai `4d4fed0`, `6622fcc`. **Done in two halves** — the invitation store
+      endpoint by `InvitationStoreTest` (`P033.27`), the listing filters by
+      `GuestListingFiltersTest` (`P033.47`, backend `1be7d3e`): 10 tests / 51 assertions over
+      `will_attend`, `reconfirmed_will_attend`, `require_flights`, `require_accommodation`,
+      absent-and-empty handling, and AND-combination. `applyFilters()` is also what `selectIds()`
+      runs, so the automation picker's "select all N matching" is covered too.
+      **Not ported:** about half of gfeai's file tests `missing_data_sent` / `logistics_completed`,
+      which read `CompletionToken` and `CompletionTokenService` — their `completion_tokens` port, a
+      §5 big job we have not taken, so those tests have nothing to run against here.
+      ⚠️ **Two defects found while writing it**, documented not fixed — `LEFTOVERS §2.10` (the ~16
+      `has()`-guarded filters return zero guests on an empty parameter, and the admin can send one)
+      and `LEFTOVERS §2.11` (`where_null` is a duplicated block whose ungrouped `orWhere` discards
+      every other filter, `selectIds()` included).
 
 ### Public registration form (frontend)
 

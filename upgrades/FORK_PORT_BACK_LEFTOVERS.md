@@ -243,6 +243,61 @@ catch it. The alignment test closes the regression risk far more cheaply.
 last one ran the title converter over *genders* and blanked them — the most damaging of the four,
 because it silently destroyed data in the output rather than mislabelling it.
 
+### 2.10 `has()` filters on the guests listing narrow on an *empty* value
+
+Found while writing `GuestListingFiltersTest` (`P033.47`). About 16 filters in
+`GuestsController::applyFilters()` are guarded with `$request->has('x')` and then run
+`where('x', $request->x)`. **`has()` is true for a present-but-empty parameter**, so `?gender=`
+becomes `where('gender', '')` and the listing returns **zero guests**.
+
+Affected (exact-match, so an empty value empties the listing): `status`, `guest_status_id`,
+`gender`, `source`, `title_id`, `country`, `nationality`, `document_type`, `language`, `with_seat`.
+The `LIKE` ones (`first_name`, `last_name`, `email`, `phone`, `job_title`, `company`,
+`registration_number`, `document_number`) degrade more gently — `LIKE '%%'` still drops rows where
+the column is NULL.
+
+The `filled()`-guarded filters are correct — `will_attend`, `reconfirmed_will_attend`,
+`require_flights`, `require_accommodation`, `is_saudi`, `verified`, `checked`, `has_printed`,
+`badge_is_collected`, `check_in`, `e_badge_sent`, `created_from`, `created_to`. That asymmetry is
+why `P033.47`'s empty-parameter test covers only the `filled()` five: extending it to the `has()`
+ones would assert the bug.
+
+**Reachable from the admin.** `search-guests-by-super.tsx` pushes its whole filter form into
+`router.push({query})` on every search. Next drops `undefined` but keeps `''`. Worse, the selects do
+`setValue('gender', String(value?.value))` — clearing one writes the **literal string
+`"undefined"`**, which reaches the API as `?gender=undefined`.
+
+**The decision:** swap `has()` for `filled()` across the block (one-line each, but ~16 call sites
+and it changes live behaviour), and separately fix `String(value?.value)` in the admin. Worth doing
+together so the fix can actually be verified end to end.
+
+### 2.11 `where_null` discards every other filter on the guests listing
+
+Also found writing `P033.47`. `GuestsController.php:237` and `:285` are a **byte-identical
+duplicated block** — the same `where_null` handling, applied twice in one pass. Each does:
+
+```php
+$guests->whereNull($whereNullField)->orWhere($whereNullField, '');
+```
+
+The `orWhere` is **ungrouped**. SQL binds AND tighter than OR, so the whole query resolves to:
+
+```
+(...every other filter... AND f IS NULL) OR (f = '')
+```
+
+Any guest whose field is an empty string matches **regardless of every other active filter** —
+category, status, RSVP, and the admin's own access restriction included. `where_not_null` at `:294`
+is written correctly (`whereNotNull(...)->where(..., '!=', '')`, both AND) and is not affected.
+
+**Severity is higher than a listing glitch:** `selectIds()` reuses `applyFilters()` to power "select
+all N matching" in the automation guest picker, so a bulk send could target guests the operator
+never selected.
+
+**The decision:** wrap the pair in a closure — `$guests->where(fn ($q) => $q->whereNull($f)->orWhere($f, ''))`
+— and delete the duplicate block. Needs a call on intent first: should `where_null` mean *null only*,
+or *null-or-empty* as written? The grouping fix is mechanical once that is settled.
+
 ---
 
 ## 3. Cosmetic / hygiene
