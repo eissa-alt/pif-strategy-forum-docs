@@ -872,6 +872,22 @@ most of the high-severity list.
       Replaces one-row-per-email token tables. Only relevant if we keep logistics.
       ⚠️ Related bug found on the way: sending a test email **silently invalidates the completion
       link already sitting in a guest's inbox**.
+      ✅ **That related bug is FIXED independently — `P033.70`, backend `60a287a`** (4 tests). It did
+      not need the token refactor: `question_tokens` is keyed by **email**, one live link per
+      address, so `buildMissingDataUrl` is delete-then-insert. Correct for a real send, destructive
+      for a preview — and `sendTest` resolves against a **real guest** (`firstOrFail`). `sendTest`
+      now passes the guest's **existing** link into `resolve()`, which already accepted a
+      `$missingDataUrl` override, so no signature changed and the three notification classes that do
+      real sends still mint. A guest with no live token falls through to normal minting — nothing to
+      revoke. The test was **proven to catch the old behaviour**, not merely written.
+      🔎 **FOUND NEXT TO IT, NOT CHANGED — wants its own item:** `sendTest` does
+      `$message->to($guest['email'])`. With the `firstOrFail`, "send test" **requires the address to
+      belong to a real guest AND emails that guest**, not the admin who asked. So an admin cannot
+      preview against their own address unless they are registered, and previewing sends real mail to
+      a real guest. That is a design problem, and changing who receives mail is outside the scope of
+      the link fix.
+      **The `completion_tokens` refactor itself stays open** and still carries its "only relevant if
+      we keep logistics" condition.
 
 ---
 
