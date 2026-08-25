@@ -1367,6 +1367,21 @@ Found by auditing our code directly. No fork comparison could have surfaced them
       an owner decision.
       A branch (`task-033-phpspreadsheet`) was created, the resolution proven, `composer.json`
       restored unchanged, and the branch deleted — nothing was left behind.
+      ⏸️ **PARKED BY THE OWNER, 2026-08-25 — waiting on a PHP 8.3+ upgrade of the dev machine, not
+      abandoned.** Revisit once `php -v` reports 8.3 or later.
+      **Recipe when that lands** (all of this was verified, only the PHP version blocked it):
+      1. branch off `dev` — rule 6 requires a dedicated branch for a PHP-major move;
+      2. raise `composer.json` `"php"` to `^8.3`;
+      3. set `phpoffice/phpspreadsheet` to `^5.8` and `maatwebsite/excel` to `^4.0`;
+      4. `composer update phpoffice/phpspreadsheet maatwebsite/excel --with-all-dependencies`;
+      5. `composer audit` — expect **3 advisories → 0**, closing `CVE-2026-59931` (SSRF via an HTTP
+         redirect bypassing the `WEBSERVICE()` domain whitelist) plus two memory-exhaustion highs;
+      6. run `composer qa`. **The blast radius is the 28 classes in `app/Exports/`** — Excel 3.x→4.x
+         is a major, so expect signature changes. `ExportColumnAlignmentTest` and
+         `EmailTemplateCloneTest` (which asserts a real workbook is produced) are the first things
+         that will catch breakage.
+      ⚠️ **Also check the deploy target's PHP, not just the dev machine** — the runtime has to move
+      too, and `composer.json` requiring `^8.3` will refuse to install on an 8.2 server.
 - [ ] **Admin, frontend and seating have zero automated tests, and there is no CI in any of the 18
       repos.** The backend has 24 feature test files. Most of the bugs in this document are
       client-side, where we have no coverage at all.
