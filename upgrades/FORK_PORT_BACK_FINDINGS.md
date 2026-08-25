@@ -575,6 +575,25 @@ most of the high-severity list.
       everything** — the test secret passes any token. `P033.49` does not affect this either way.
       We do not read `.env`; check it on the real deploy. See `LEFTOVERS §4`.
 - [ ] **Multi-file upload input** with in-browser image downscaling. gfeai `df4c152`.
+      ⛔ **AUDIT 2026-08-25 — NOT PORTED. The item overstates what this is.** Three reasons, any one
+      of which is disqualifying:
+      **(1)** it posts to **`/upload-media-work`**, which does not exist here — that is
+      `uploadMediaWorkAdmin`, added in gfeai's rebrand commit for their GFEAI-26 media form. Porting
+      the component means also porting a backend endpoint this item never mentions.
+      **(2)** it is **orphaned in gfeai's own tree** — `git grep` for `custom-media-input` /
+      `CustomMediaInput` across their HEAD returns only the file itself. Nobody imports it. That is
+      the **third** orphaned component found in the forks (see also `SendMissingDataBulkModal` under
+      bulk notify, and `resetFilterPreferencesCache` under filter visibility).
+      **(3)** it is not a generic input. Its own header reads *"GFEAI 26 — Media (media_gfai): admin
+      multi-file 'previous work' upload"*, with `MAX_FILES = 5`, a 10 MB video cap and a shape bound
+      to their `media_gfai` form — **a form shape this baseline does not have**.
+      Porting it would yield a component nothing renders, posting to a route that 404s, for a shape
+      that does not exist — worse than dead code, since it would also need a new endpoint to become
+      anything.
+      **The salvageable part is ~30 lines:** the canvas downscale to `IMAGE_MAX_DIM = 1920`
+      (`custom-media-input.tsx:60-75`). If in-browser downscaling is wanted, lift that into the
+      existing `custom-file-input-2` components as its own task — that is building a capability, not
+      porting a fork feature.
 - [x] **Searchable guest-type picker** instead of an unbounded card list. gfeai `c127e36`.
       **Done — with a caveat: it is a bounded dropdown, NOT searchable.** `P033.53`, admin `bd4bc2a`.
       Our `CustomSelect` is a re-export of the Headless UI `ui-select` primitive (migrated off
