@@ -880,12 +880,15 @@ most of the high-severity list.
       `$missingDataUrl` override, so no signature changed and the three notification classes that do
       real sends still mint. A guest with no live token falls through to normal minting — nothing to
       revoke. The test was **proven to catch the old behaviour**, not merely written.
-      🔎 **FOUND NEXT TO IT, NOT CHANGED — wants its own item:** `sendTest` does
-      `$message->to($guest['email'])`. With the `firstOrFail`, "send test" **requires the address to
-      belong to a real guest AND emails that guest**, not the admin who asked. So an admin cannot
-      preview against their own address unless they are registered, and previewing sends real mail to
-      a real guest. That is a design problem, and changing who receives mail is outside the scope of
-      the link fix.
+      🔎 **FOUND NEXT TO IT, NOT CHANGED — corrected 2026-08-25.** An earlier note here (and in
+      `P033.70`'s commit message) said `sendTest` "emails the guest rather than the admin who asked".
+      **That was wrong.** `$guest` is looked up *by* `$request->email`, so `$message->to($guest['email'])`
+      is the same address the admin typed — the test goes where they asked.
+      The real limitation is milder: `Guest::where('email', ...)->firstOrFail()` means **the address
+      must belong to a registered guest**, so an admin cannot send themselves a test unless they are
+      registered, and the modal (titled simply "Send test email" with a plain "Email" field) gives no
+      hint of that — an unregistered address just 404s. A minor UX/design gap, not mail going
+      somewhere unintended.
       **The `completion_tokens` refactor itself stays open** and still carries its "only relevant if
       we keep logistics" condition.
 
