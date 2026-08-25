@@ -820,8 +820,29 @@ most of the high-severity list.
       **Limitation:** this fixes navigation only. A clone building a real 2-step shape still needs a
       `step-2` that POSTs — ours is a middle step and does not submit.
 
-- [ ] **Admin-controllable privacy consent** — today the consent checkbox is hardcoded per shape,
+- [x] **Admin-controllable privacy consent** — today the consent checkbox is hardcoded per shape,
       one shape has none, and one records consent silently. gfeai `bfebdfc` / `0bef709`.
+      **Done** — `P033.68`, frontend `f1e0b74` + backend `d53b4d8`. **Owner decisions:** required in
+      **all** shapes, and **text only, no policy link** (this baseline ships no policy document, and
+      a placeholder a clone forgets to replace is worse than no link).
+      **Not "admin-controllable" in the end** — gfeai's `0bef709` makes `isRequired` configurable;
+      the owner chose always-required, which is the stronger position and removes the toggle.
+      The item's description held exactly for our three shapes: `one-step` had a hardcoded
+      **paragraph** asserting agreement with nothing to tick; `one-step-rsvp` called
+      `setValue('terms', 'yes')` on submit; `fours-steps` was already correct and is **untouched**.
+      🔴 **A second silent-consent site the item does not mention:** `GuestsController:1098` built the
+      **decline** path with `'terms' => $request['terms'] ?? 'yes'`, recording consent for a guest who
+      declined and may never have seen a checkbox. Now `?? null`.
+      ⚠️ **A runtime crash caught before shipping:** gfeai's component reads `useFormContext()`, and
+      **none of our shapes wrap their form in a `FormProvider`** — the context would be null and the
+      component would throw, while `tsc` passed clean. Rewritten to take `register` / `errors` as
+      explicit props, with the reason in the docblock.
+      Only **2 of gfeai's 16 files** were relevant; the other 14 are form shapes we do not have plus
+      their own policy PDF.
+      🔎 **FINDING, not fixed:** the frontend carries **103 `privacy_policy_*` keys in EN with no
+      Arabic** — the whole privacy-policy page renders only in English, so Arabic guests now tick a
+      consent referring to a policy they cannot read in their language. Pre-existing (parity was
+      606/503 before this change), out of scope, **wants its own item**.
 
 ### Big jobs — decide before starting
 
