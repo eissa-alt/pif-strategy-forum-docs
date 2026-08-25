@@ -494,8 +494,25 @@ most of the high-severity list.
 - [ ] **E-visa bulk download** — selected / filtered / all pages / in-progress only, as one zip.
       Today "Download all" fires one browser download per guest and browsers block the burst.
       Paired backend + admin job. gfeai `01582a2`, `2f917ec`, `48b8578`, `528c977`, `b6b84b9`.
-- [ ] **Clone an email template** (with its attachments). We already clone categories, SMTP configs
+- [x] **Clone an email template** (with its attachments). We already clone categories, SMTP configs
       and badges — templates are the gap. Paired backend + admin. gfeai `1a423f5` / `3f97f70`.
+      **Done** — `P033.62` backend `0b5d093` + `P033.63` admin `56c1593`, with
+      `EmailTemplateCloneTest` (7 tests). Mirrors `BadgesController::clone` and additionally copies
+      the attachment rows, **the files behind them**, and the social links.
+      **Two departures from gfeai:** their blanket `catch (\Exception)` returning
+      `$e->getMessage()` with a 500 was dropped — echoing raw exception text leaks table names and
+      paths, and Laravel already returns a clean 500; only the `ModelNotFoundException` → 404 is
+      kept. And **gfeai shipped this untested by their own admission** (*"the full test suite and
+      phpstan were NOT re-run … feature tests are still outstanding"*), so the tests are new.
+      The tests pin the silent-failure cases: a `blocked` row (this module's delete gesture) is not
+      copied, a row whose file is already **missing from disk** is skipped rather than fatal and does
+      not leave a row pointing at nothing, and files are asserted **on disk** at the copy's path.
+      Confirmed our layout is `attachments/{template_id}/{lang}/{file}`, identical to gfeai's — had
+      it differed, their `continue`-on-missing would have produced attachment-less clones with **no
+      error at all**.
+      🔎 Fixed in passing: `body_en`/`body_ar` are **not columns** on `email_templates` (they are
+      `content_en`/`content_ar`), so `fill()` silently dropped them. The same wrong field had been
+      introduced into `GuestSeatingObserverTest` and `GuestOfflineSyncTest` earlier in this task.
 - [ ] **Bulk missing-data notify** — `POST /admin/guests/notify-bulk` with a sent/skipped tally.
       Hidden inside a commit titled "feat: rebrand". gfeai `4c6187e`.
 - [x] **Harden base64 uploads.** `UploadService.php:61` takes the file extension from whatever mime
