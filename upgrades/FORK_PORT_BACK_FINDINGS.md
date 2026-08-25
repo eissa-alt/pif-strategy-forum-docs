@@ -1354,6 +1354,17 @@ Found by auditing our code directly. No fork comparison could have surfaced them
 - [ ] **Admin, frontend and seating have zero automated tests, and there is no CI in any of the 18
       repos.** The backend has 24 feature test files. Most of the bugs in this document are
       client-side, where we have no coverage at all.
+      ⛔ **GitHub Actions CI declined by the owner, 2026-08-25.** Workflows were written for all four
+      repos and then removed unbuilt — do not re-propose them. Recorded because the groundwork is
+      real and cheap to redo if the decision changes: all four repos are on GitHub with **no CI**,
+      all four now carry lockfiles (`composer.lock` since `P033.48`), the backend suite needs **no
+      database service** (`phpunit.xml` pins sqlite `:memory:`), and `.env.example` +
+      `key:generate` is all the environment it wants. The three backend gate commands were verified
+      to pass verbatim from the command line — `pint --test`, `phpstan analyse --no-progress`,
+      `php artisan test` (607 passing).
+      **The other half of this item still stands and is untouched by that decision:** admin,
+      frontend and seating have **zero tests of their own**. Whatever runs them, there is nothing
+      to run.
 
 ---
 
