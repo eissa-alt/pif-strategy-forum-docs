@@ -1351,6 +1351,22 @@ Found by auditing our code directly. No fork comparison could have surfaced them
       likely drags Excel with it, and **28 classes in `app/Exports/` ride on that** (see the export
       column-letters item in §1 and `LEFTOVERS §2.9`). Sequence it after, or together with, any
       export work.
+      🔴 **BLOCKED ON A PHP RUNTIME UPGRADE — established 2026-08-25, proven by Composer's resolver,
+      not inferred.** The chain dead-ends:
+      `phpspreadsheet 1.30.5` (where we are, whole 1.x line affected) is pinned by
+      `maatwebsite/excel 3.1.70` — **the newest 3.x, which still requires `phpspreadsheet ^1.30.5`**.
+      The only line that allows the patched `phpspreadsheet ^5.8` is `maatwebsite/excel 4.0.x`, and
+      **that requires `php ^8.3`** against our runtime of **8.2.26** (`composer.json` requires `^8.2`).
+      Composer's verdict verbatim: *"maatwebsite/excel[4.0.0, ..., 4.0.2] require php ^8.3 -> your
+      php version (8.2.26) does not satisfy that requirement."* **There is no Excel release that
+      reaches the patched phpspreadsheet on PHP 8.2.**
+      **So this is not a dependency bump — it is a PHP 8.2 → 8.3 runtime upgrade**, gated by
+      `CLAUDE.md` rule 6 by name and changing the production server, not just the lockfile. The only
+      alternative is dropping `maatwebsite/excel` and driving `phpspreadsheet` directly, which is a
+      rewrite of **28 export classes**. Both are materially bigger than this item describes and need
+      an owner decision.
+      A branch (`task-033-phpspreadsheet`) was created, the resolution proven, `composer.json`
+      restored unchanged, and the branch deleted — nothing was left behind.
 - [ ] **Admin, frontend and seating have zero automated tests, and there is no CI in any of the 18
       repos.** The backend has 24 feature test files. Most of the bugs in this document are
       client-side, where we have no coverage at all.
