@@ -833,28 +833,31 @@ most of the high-severity list.
       Beyond pep — whose observer has **no test at all** — the suite covers the "must not fire" half:
       inert by default, master channel gate, clearing a seat, editing an unrelated field, a second
       check-in, and creating an already-seated guest.
-- [~] **Per-admin filter visibility.** One button on the filter row opens a picker; each admin hides
+- [x] **Per-admin filter visibility.** One button on the filter row opens a picker; each admin hides
       the filters they never use. Stored on `admins.preferences`, keyed by route, so it follows them
       to another device. Saves *hidden* keys, so filters added later stay visible by default.
-      **`ListingFilters` is used by 45 listings** (not 44), so they all get it with no call-site
-      changes. The guests listing needed extra work — `FilterSlot` self-registers so its 24
-      hand-written filters appear in the picker too. pep `fd41aed`. *(Large.)*
-      **PART A DONE** — `P033.60`, admin `d1ffa7b`: the `use-filter-visibility` hook + the
-      `ListingFilters` picker, covering **all 45 generic listings**. Route-keyed with `[lang]`
-      stripped; persists through the `P033.57` endpoint.
-      ⏳ **PART B STILL OPEN** — `filter-visibility.tsx` (175 lines, the `FilterVisibilityProvider` /
-      `FilterSlot` context) and the self-registration inside `search-guests-by-super.tsx`, which pep
-      rewrites by **971 lines**. That is the guests listing's 24 hand-written filters, which the
-      generic component cannot express. Part A stands alone without it.
-      **Two departures from pep, both deliberate:**
+      **DONE IN FULL** — Part A `P033.60` (admin `d1ffa7b`): the `use-filter-visibility` hook and the
+      `ListingFilters` picker, covering all **45** generic listings (not 44). Part B `P033.65`
+      (admin `b3d9483`): `FilterVisibilityProvider` / `FilterSlot` plus self-registration of the
+      guests listing's **21** hand-written filters, sharing the same hook, storage and route key.
+      **The 977-line Part B diff is re-indentation, not rewriting** — our file was byte-identical to
+      pep's pre-image except 8 lines, and those 8 were the dinner params pep had already removed. All
+      11 imports were verified to resolve before copying.
+      **Three departures from pep, all deliberate:**
       **(1)** our `ListingFilters` was pep's pre-image *plus* the `modal={false}` scroll-lock fix from
-      `P033.12` — taking their post-image wholesale silently reverts it and reintroduces the dropdown
-      freeze. Re-applied and verified.
-      **(2)** `resetFilterPreferencesCache` is **exported but never called anywhere in pep's HEAD**.
-      The bag is cached at module scope, so in their build admin B signing in on the same tab
-      inherits admin A's hidden-filter choices until a full reload. Wired into our `logout()`.
-      **Not ported:** `data/feature-flags.ts` from the same commit — a `SOCIAL_POSTER_ENABLED` flag
-      for an unrelated client request, and against `CLAUDE.md` rule 3.
+      `P033.12`; taking their post-image silently reverts it. Re-applied and verified.
+      **(2)** `resetFilterPreferencesCache` is **exported but never called anywhere in pep's HEAD**,
+      so in their build one admin inherits another's hidden-filter choices on a shared tab until a
+      reload. Wired into our `logout()`.
+      **(3)** `data/feature-flags.ts` from the same commit was not ported — a `SOCIAL_POSTER_ENABLED`
+      flag for an unrelated client request, and against `CLAUDE.md` rule 3.
+      🔎 **Side-effect on `LEFTOVERS §2.1`:** Part B removed the dead `dinner_invite` /
+      `with_dinner_badge` params **from the filter form** (verified dead: no `dinner` column in any
+      migration, `with_dinner_badge` commented out at `GuestsController:1410`). **The chain is only
+      half removed** — `guests-listing.tsx` and `pages/[lang]/guests/index.tsx` still declare and
+      forward both. They are now always empty and the backend has no such filter, so it is harmless,
+      but it is a half-state left on purpose: §2.1 is parked pending an owner decision. ~8 lines
+      across 2 files whenever that lands.
 - [x] **`admins.preferences` column + `GET/PUT /admin/me/preferences`.**
       ⚠️ **pep's routes have no `auth.admin` middleware**, so a mobile guest token can reach an
       admin write. Add it when porting. **Done** — `P033.57`, backend `61a62a6`, with
