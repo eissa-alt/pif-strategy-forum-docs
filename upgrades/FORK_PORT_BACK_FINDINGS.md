@@ -513,8 +513,25 @@ most of the high-severity list.
       🔎 Fixed in passing: `body_en`/`body_ar` are **not columns** on `email_templates` (they are
       `content_en`/`content_ar`), so `fill()` silently dropped them. The same wrong field had been
       introduced into `GuestSeatingObserverTest` and `GuestOfflineSyncTest` earlier in this task.
-- [ ] **Bulk missing-data notify** — `POST /admin/guests/notify-bulk` with a sent/skipped tally.
+- [~] **Bulk missing-data notify** — `POST /admin/guests/notify-bulk` with a sent/skipped tally.
       Hidden inside a commit titled "feat: rebrand". gfeai `4c6187e`.
+      **BACKEND DONE** — `P033.64`, backend `db69a10`, with `GuestNotifyBulkTest` (8 tests). Per
+      guest the work is identical to our single-guest `NotifyMissingData`; the difference is that a
+      guest who cannot be sent to is **skipped and returned by id** rather than 422-ing the whole
+      run. Two skip reasons: no `missing_data_email` on the category, or no email on the guest.
+      Route sits inside our `admin/guests` group with `admin.can:guests_listing,notify` —
+      **gfeai's route has no permission gate at all**. `ids.*` validated as `uuid`, not their
+      `string`.
+      ⛔ **ADMIN HALF DELIBERATELY NOT PORTED — it is dead code in gfeai too.**
+      `SendMissingDataBulkModal` has **no caller anywhere in gfeai's tree**: every reference to it is
+      inside the modal file itself (declaration, definition, export). They built it and never wired
+      it up. Separately, **our guests listing has no multi-select** — no checkbox, no `selectedIds`,
+      no selection state — and the modal's whole contract is `selectedIds: string[]`. Porting it
+      would reproduce their dead code exactly.
+      **What is actually missing is multi-select on the guests listing**, which is its own piece of
+      work and is not what this item describes. The endpoint is live, gated and tested, so it is
+      callable the moment a selection UI exists — or from an ops script today.
+      ⚠️ Also needs `res:notify_bulk` / `res:notify_bulk_skipped`, absent from our translations.
 - [x] **Harden base64 uploads.** `UploadService.php:61` takes the file extension from whatever mime
       the caller declares, with no allow-list — `data:x/phtml;base64,…` writes a `.phtml` file to
       the **public** disk. There is also no size limit. 4 call sites are affected.
