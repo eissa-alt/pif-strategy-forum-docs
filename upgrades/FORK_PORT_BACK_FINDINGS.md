@@ -491,9 +491,32 @@ most of the high-severity list.
       No new translation keys: `web:is_sent`, `web:yes`, `web:no` already exist in EN **and** AR.
       `routes/api.php` untouched — a query parameter on an existing endpoint, so no mobile-contract
       impact.
-- [ ] **E-visa bulk download** — selected / filtered / all pages / in-progress only, as one zip.
+- [x] **E-visa bulk download** — selected / filtered / all pages / in-progress only, as one zip.
       Today "Download all" fires one browser download per guest and browsers block the burst.
       Paired backend + admin job. gfeai `01582a2`, `2f917ec`, `48b8578`, `528c977`, `b6b84b9`.
+      **Done** — `P033.66` backend `054903e` + `P033.67` admin `993ef97`, with
+      `EVisaBulkDownloadTest` (10 tests). `POST /admin/guests/e-visa/download-bulk`, gated
+      `admin.can:e_visa`. Each guest's package is already a zip on the private disk, so each is
+      extracted and re-added under a folder named by registration number rather than nesting zips.
+      Chunked at 100, streamed in 512 KB reads, scratch swept, 1000-package ceiling.
+      🔴 **THE ADAPTATION THAT MATTERED — do not "restore" gfeai's gate.** They gate on
+      `require_visa === 'yes' AND valid_visa === false`. **We have no `require_visa` column** (zero
+      references in migrations, model or controller), so their gate is an unknown-column error here.
+      More importantly `EVisaListing` gates on `valid_visa === false` alone and its docblock forbids
+      widening it — the rows carry passport-grade PII. The bulk endpoint uses **our listing's gate
+      exactly**: a bundle that could include a guest the console never showed is a leak.
+      **Structural improvement taken from gfeai:** `applyEVisaConsoleFilters` is extracted and called
+      by **both** the listing and the bulk download, so the `filtered` scope cannot drift from what
+      the console shows. Our `EVisaListing` was refactored to share it.
+      ⚠️ **Third fork post-image that would have reverted our work:** our `e-visa-listing.tsx`
+      differed from gfeai's pre-image by 25 lines, all of them our `messageOf` /
+      `readApiErrorMessage` blob-error utilities; their version reverts to `getApiError`, which
+      cannot read a message out of a Blob. Applied their change onto ours instead. (See also
+      `ListingFilters` `modal={false}` and `guestsSyncOffline`.)
+      Ported the **refined** final state (`b6b84b9`, net −62 lines: one server-scoped action) rather
+      than the intermediate `528c977`. **Not ported:** `01582a2` also edits
+      `visa-application-form.blade.php` — a blade we do not have (ours is `visa-document.blade.php`),
+      and the "enhance form rendering" half of that commit's title.
 - [x] **Clone an email template** (with its attachments). We already clone categories, SMTP configs
       and badges — templates are the gap. Paired backend + admin. gfeai `1a423f5` / `3f97f70`.
       **Done** — `P033.62` backend `0b5d093` + `P033.63` admin `56c1593`, with
