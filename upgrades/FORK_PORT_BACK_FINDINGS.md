@@ -468,11 +468,28 @@ most of the high-severity list.
       tile and rely on colour alone. The 8 broken social icons in the same file are the parked
       LEFTOVERS 2.6 bucket decision, deliberately untouched.
 
-- [ ] **Admin CSP blocks 8 social icons.** `soical-media-modal.tsx:43+` hardcodes them on
+- [x] **Admin CSP blocks 8 social icons.** `soical-media-modal.tsx:43+` hardcodes them on
       **another ALT client's bucket** (`emails-alt.eu-central-1.linodeobjects.com`). It is never
       derived from env, so the CSP at `next.config.js:54` cannot cover it and all 8 render broken.
       **Do not copy gfeai's fix** — it widens the CSP to a wildcard bucket host, which undoes our
       env-derived design. Move the icons to the project's own storage instead.
+      **Done** — `P033.69`, backend `887d324` + admin `3de202f`. Owner decision: serve them from our
+      own backend. The 8 PNGs are tracked in the backend's `public/social/` and resolved through a
+      new `socialIconUrl()` in `utils/storage.ts`.
+      ⚠️ **Worse than the item says.** The broken preview is the visible half; the chosen URL is
+      stored on `SocialMediaLinksPerTemp` and **embedded in outgoing email**, so every clone was
+      sending guests images served from a customer's bucket it does not control.
+      ✅ **NO CSP CHANGE WAS NEEDED** — the warning above is satisfied by construction, not by
+      restraint. `next.config.js` already derives `envOrigins` from `NEXT_PUBLIC_STORAGE_URL` via
+      `new URL(url).origin`, and the icons now sit on **that same origin**. Verified, not assumed:
+      `https://api.example.com/social/linkedin.png` against a CSP origin of `https://api.example.com`.
+      **Two constraints that shaped it:** `storage/app/public/.gitignore` is `*`, so nothing there
+      can be tracked and the icons could not live behind `/storage` and still ship with the repo —
+      hence `public/`, served at the app origin. And `socialIconUrl()` strips the trailing
+      `/storage` rather than adding a second env var that could drift from the first; the reasoning
+      is in its docblock so it is not "tidied" into a new variable later.
+      The URL must stay **absolute** — it is embedded in mail, where a relative admin path would not
+      resolve.
 
 ### Missing features
 
