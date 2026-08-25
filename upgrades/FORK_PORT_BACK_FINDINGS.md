@@ -888,7 +888,16 @@ most of the high-severity list.
       have **silently cleared the flag on every save of every admin** had the resource not been
       updated; and the seating classnames were checked in the **built CSS**, because Tailwind purges
       what it cannot statically see and a dynamic classname would have rendered nothing.
-- [ ] **Seat/table number in the default see-more panel** — present only on the RSVP shape today.
+- [x] **Seat/table number in the default see-more panel** — present only on the RSVP shape today.
+      **Done** — `P033.61`, admin `760d5f6`. **One edit covers two shapes:**
+      `fours-steps/step-1.tsx` is a 13-line re-export of `one-step/step-1.tsx`, so the four-step
+      shape picks the rows up for free. pep does not touch their `fours-steps` panel, which reads as
+      an oversight until you notice it is a re-export in their tree too — a second edit would have
+      been redundant, not thorough. All three shapes now show seat and table.
+      No new keys: `web:table_number` / `web:seat_number` already existed in EN and AR.
+      Kept pep's *"read-only, the Seating Plan Manager owns these columns"* comment, which matters
+      more here than in their tree: after `P033.58`/`P033.59` a seat change can fire guest
+      notifications, so this panel must not be read as an edit surface.
 - [x] **Favicon components reference three assets that are not in `public/`**, while the real ones
       go unreferenced. **Done** — `P033.45`, frontend `97700e7`. `favicon-32x32.png`,
       `favicon-16x16.png` and `safari-pinned-tab.svg` all 404'd; `favicon.svg` and
