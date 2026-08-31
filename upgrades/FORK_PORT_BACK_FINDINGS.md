@@ -863,11 +863,32 @@ most of the high-severity list.
 
 ### Big jobs — decide before starting
 
-- [ ] **DB-driven mandatory-field catalogue (`form_shape_fields`).**
+- [~] **DB-driven mandatory-field catalogue (`form_shape_fields`).**
       Today the field lists are hardcoded in the admin and frontend bundles. gfeai moves them into a
       table, serves them over the API, and enforces them server-side.
       **This sits right on the "no forms business logic" line.** The catalogue and the enforcement
       are architecture; the per-shape field lists are project data. Worth its own task.
+      ✅ **BUILT BY امتنان المطيري, 28 Aug 2026 — not by this task.** Backend `ad96ae1`, admin
+      `f3563cc`, merged into `dev` on 2026-08-25 and verified alongside our work (618 backend tests
+      green, admin type-check / check:rbac / build green).
+      **What landed:** a `form_shape_fields` table (`form_shape`, `field_key`, `translation_key`,
+      `sort_order`), `FormShapeField` model, `FormShapeFieldController`, `FormShapeFieldsSeeder`
+      covering our three real shapes (`default`, `default-one-step-rsvp`, `default-four-steps`), and
+      **7 tests** — including idempotent reseeding and pruning of dropped rows. The admin now fetches
+      the list instead of bundling it: `data/mandatory-fields-by-form-shape.tsx` and
+      `data/mandatory-fields-select.tsx` were deleted.
+      ✔️ `full_name_on_document` — added to the old hardcoded list earlier in this task — **survived
+      the move** into the seeder. Verified.
+      ⚠️ **Marked `[~]`, not done: the "enforces them server-side" half is NOT implemented.** The
+      controller exposes only `index` and `selectList`; `FormShapeField` is **not referenced by
+      `GuestsController`**, so nothing validates a submitted guest against the catalogue. It is a
+      served catalogue, not enforcement.
+      ⚠️ **`admin/form-shape-fields` carries no `admin.can` gate.** It sits in the plain
+      `['localization','auth:sanctum']` group — the same exposure `P033.57` fixed for
+      `admins.preferences` — so **any sanctum token, including a mobile guest's, can read it**. The
+      neighbouring `admin/gates` group is gated with `admin.can:gates`; this one is not. Low
+      sensitivity (it is a field-name catalogue, not guest data), but inconsistent with the
+      surrounding routes. **Owner's call — it is their commit, not ours to change unilaterally.**
 - [ ] **Split the completion flow into purpose-scoped tokens (`completion_tokens`).**
       Replaces one-row-per-email token tables. Only relevant if we keep logistics.
       ⚠️ Related bug found on the way: sending a test email **silently invalidates the completion
