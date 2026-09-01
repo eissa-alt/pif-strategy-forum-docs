@@ -3,7 +3,52 @@
 > Rolling pointer, overwritten each session. For the durable record see the per-task `TASK.md`,
 > `decisions/LEDGER.md`, and `upgrades/UPGRADE_SUMMARY.md`. Full plan: `upgrades/CYAN_FEATURE_PARITY_MASTER_PLAN.md`.
 
-**2026-08-08 (latest) — Task 033: section 4 CLOSED and section 5 STARTED. 20 commits total across
+**2026-09-01 (latest) — Task 034: the PSF 2027 registration sheet is implemented, except Deals.
+Two new guest form shapes ship end to end (backend + admin + frontend + docs). ALL GATES GREEN —
+backend pint + phpstan + **635 tests** (618 → 635, 17 new); both Next apps `yarn type-check` +
+`yarn build`; admin `yarn check:rbac`. NOTHING COMMITTED, NOTHING PUSHED.**
+- **What shipped.** `psf-private-2027` (1 step) needed **no migration** — every field on the
+  "PRIVATE PAGE 2027" sheet already existed. `psf-public-2027` (2 steps) needed **6 new columns**:
+  `position_level`, `ecosystems` (json, capped at 2), `attendance_purpose` + `_other`,
+  `pif_communications_consent`, `company_profile`. Both shapes have public forms, admin
+  create/edit, see-more panels, export columns, seeder catalogue entries and EN+AR.
+- **⚠️ The Deals tab is NOT built.** It produces no `guests` row — two signing parties, 3 attendees
+  each, monetary values, a review lifecycle and its own dashboard — so it cannot be a form shape.
+  Specified in full at [`tasks/035-psf-2027-deals/TASK.md`](tasks/035-psf-2027-deals/TASK.md) with
+  8 decisions to lock at kickoff. Scoped out with the owner, not overlooked.
+- **⚠️ Uploads now accept PDF, on one narrow path only.** Every upload in the repo was jpg/png
+  (`UploadService::ALLOWED_EXTENSIONS`, `Base64Image`), so "upload your company profile" could not
+  be submitted at all. Added `Base64Document` + `UploadService::storeBase64Document()`, which is
+  **private-disk-only** and always sniffs the decoded bytes. **`storeBase64()` is behaviourally
+  unchanged** — the public-disk callers pass `imageOnly: false` and lean entirely on the extension
+  allowlist, and widening it for them is the exact bug its docblock warns about.
+- **⚠️ The guests listing has TWO export buttons hitting DIFFERENT classes** — this was found in a
+  verification pass, after the first implementation had already "finished". "Export all" →
+  `GuestsExport`; **"Export guests" → `GuestsExportGuestView`**, which was missing the six new
+  columns entirely. Now fixed in all three guest exports (`GuestsExportView` too — live routes, no
+  admin caller today), and the export tests are parameterised over the three classes asserting both
+  width and heading presence, so a fourth cannot be missed the same way.
+- **⚠️ Export columns were APPENDED, never inserted.** `GuestsExport` formats by hardcoded column
+  letter (`COL_TITLE` 'D', `COL_EMAIL` 'I', `COL_PHONE` 'J', `DATE_COLS` M/Q/X) and
+  `ExportColumnAlignmentTest` pins them; the six new columns start at Z. That test was re-run alone
+  and is green, plus a new case pins `headings()` and `map()` to the same width.
+- **⚠️ Nothing has been verified in a browser**, and **the migration has only run on sqlite**
+  (`:memory:`, via RefreshDatabase) — there is no MySQL on this machine, so `->after()` placement
+  and the real `json` type are unconfirmed. Click-list + both gaps in the task's
+  "Verification still owed".
+- **Two things the sheet asks for that are deliberately NOT built:** photo white-background
+  detection (p1 r9 "Simple detection solution to reject photos") — stated in the upload note and
+  left to a human; and `ecosystems` in the `where_null`/`where_not_null` filter, because that
+  filter does `orWhere($f, '')` and MySQL rejects that on a `json` column.
+- **Before this runs anywhere:** `php artisan migrate` **and**
+  `php artisan db:seed --class=FormShapeFieldsSeeder` — without the seeder the two new shapes have
+  no mandatory-field rows and the admin picker falls back to `default`'s list.
+- **Also this session:** `.env.local` created for admin + frontend and `.env` for the backend (all
+  gitignored, none previously present), modelled on the sibling projects and this repo's own
+  `.env.example_prod`. Admin :3000, frontend :3001, API :8000.
+- **Next:** commit the four repos, run the browser click-list, then Task 035 (Deals).
+
+**2026-08-08 — Task 033: section 4 CLOSED and section 5 STARTED. 20 commits total across
 backend / admin / frontend / docs. ALL COMMITTED, NOTHING PUSHED. Backend tests 489 → 494. A live
 production defect was found and fixed: reCAPTCHA was rejecting every login and registration under
 `config:cache`.**
