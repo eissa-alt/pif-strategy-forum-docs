@@ -126,6 +126,14 @@ Both are captured; `job_title` stays the badge text.
   `/form-shape-fields/select` and re-fetches on `watch('form_shape')`; admin forms read
   `mandatory_fields_admin` with a fallback to `mandatory_fields`, the public forms read
   `mandatory_fields` — and all 15 `translationKey`s the two new shapes emit exist in EN and AR).
+- 2026-09-02 — **migrated + seeded against the live dev DB** (`psf_2027`, MariaDB 10.4.28).
+  `migrate:status` shows 0 pending; the six columns are present with the intended `->after()`
+  placement. `db:seed --class=FormShapeFieldsSeeder` wrote **73 rows across 5 shapes**, each
+  matching `catalogue()` exactly in both membership and `sort_order`, with no orphan shapes.
+  `FormShapeFieldController::selectList()` was called directly and returns 15 options for
+  `psf-public-2027`, 10 for `psf-private-2027`, and correctly falls back to `default`'s 9 for an
+  unknown shape. The table had been **completely empty** beforehand, so the picker had been
+  returning nothing for *every* shape, not just the new ones. Suite still green at 635.
 - 2026-09-01 — **full gate green.** Backend `pint --test` + `phpstan` (needs `--memory-limit=2G`;
   the 128M default crashes the worker) + `php artisan test` → **628 passed** (618 before, +10 mine).
   `ExportColumnAlignmentTest` re-run on its own and green, confirming the append kept
@@ -137,20 +145,23 @@ Both are captured; `job_title` stays the badge text.
 
 1. **Nothing has been exercised in a browser or against a live API.** Everything is reasoned
    from source with the static gate green. The click-list is in "Verification still owed" below.
-2. **The migration has only been exercised on sqlite.** The test suite runs `:memory:` sqlite with
-   `RefreshDatabase`, so the migration ran 39 times — but sqlite ignores `->after()` and stores
-   `json` as `text`. There is no MySQL on this machine, so column *placement* and the real `json`
-   type are unverified against the production driver. Run `php artisan migrate` on a MySQL dev DB
-   before trusting it.
-3. **`ecosystems` is not offered in the `where_null` / `where_not_null` filter.** Those apply
-   `whereNull($f)->orWhere($f, '')`, and comparing a MySQL `json` column to `''` raises
-   "Invalid JSON text". Needs a json-aware branch in `GuestsController::index()` first.
+2. ~~The migration has only been exercised on sqlite.~~ **RESOLVED 2026-09-02.** Verified against
+   the live dev DB (`psf_2027` on **MariaDB 10.4.28**): all six columns exist, nullable, and
+   `->after()` placed them exactly as intended — `position_level` at #9 straight after `job_title`
+   (#8), `ecosystems` at #15 straight after `industry` (#14), then the remaining four in order.
+3. **`ecosystems` is not offered in the `where_null` / `where_not_null` filter — and on this
+   stack that caution turns out to be unnecessary.** The exclusion assumed a native MySQL `json`
+   column, where `whereNull($f)->orWhere($f, '')` raises "Invalid JSON text". This project runs
+   **MariaDB 10.4**, where Laravel's `json()` compiles to `longtext`; the query was run against the
+   real table and completed fine. So it is safe to add on MariaDB. It was left out because it would
+   break on a native-JSON MySQL 8 deployment — decide once the production engine is confirmed.
 4. **Photo background is not detected.** The sheet (p1 r9) asks for a "Simple detection solution
    to reject photos" that are not on a white background. Not built — the requirement is stated
    in the upload note and checked by a human. Needs its own decision (client-side heuristic vs.
    an admin review step).
-5. **`FormShapeFieldsSeeder` must be re-run** for the two new shapes to appear in the admin's
-   mandatory-fields picker: `php artisan db:seed --class=FormShapeFieldsSeeder`.
+5. ~~`FormShapeFieldsSeeder` must be re-run.~~ **DONE on the dev DB 2026-09-02** — 73 rows across
+   5 shapes. Still required on every *other* environment (staging/prod) before the picker works
+   there: `php artisan db:seed --class=FormShapeFieldsSeeder`.
 6. **The Arabic copy is a first pass** and has not been reviewed by a native speaker/the client.
 
 ## Verification still owed (browser)
@@ -173,8 +184,8 @@ Both are captured; `job_title` stays the badge text.
 - [x] Next apps `yarn type-check` green; admin `yarn check:rbac` green
 - [x] Next apps `yarn build` green
 - [x] Backend `composer qa` green — pint + phpstan + 635 tests (17 new)
-- [ ] `FormShapeFieldsSeeder` re-run on the target environment
-- [ ] `php artisan migrate` run against **MySQL** (only sqlite so far — see gap 2)
+- [x] `FormShapeFieldsSeeder` run on the dev DB — 73 rows across 5 shapes, order verified
+- [x] `php artisan migrate` run against the real engine (MariaDB 10.4), column placement verified
 - [ ] Browser verification (list above)
 - [ ] Docs: this TASK.md set to `done`; index row updated
 - [ ] Mobile contract checked — `routes/api.php` was **not** touched, but `GuestsResources`
