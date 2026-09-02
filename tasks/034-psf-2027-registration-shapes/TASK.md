@@ -141,6 +141,26 @@ Both are captured; `job_title` stays the badge text.
   `yarn type-check` + `yarn build` both green; admin `yarn check:rbac` green (11 pre-existing warnings,
   no new pages added).
 
+## Bugs found in the baseline while testing this
+
+Neither is caused by task 034; both were hit by exercising the real endpoints,
+and both are pinned by `tests/Feature/AdminGuestVerifiedFlagsTest`.
+
+1. **Admin "Add Guest" was broken for every form shape.** `storeGuest()` passed
+   `$request['verified']` and `$request['checked']` straight into the model, but
+   both columns are `tinyint(1) NOT NULL` and the admin create form seeds
+   `verified: null` (guests-form-create.tsx) while never sending `checked` at all.
+   Every creation died with SQLSTATE 1048. Fixed with `$request->boolean()`,
+   matching `is_saudi` two lines below.
+2. **The "Un-verify" row action was broken.** `unverify()` assigned `null` to the
+   same NOT NULL column, so it 500'd every time. Fixed to `false` — the column has
+   no third state, and `verify()`'s counterpart is `= true`.
+
+Also worth knowing for anyone writing fixtures: `guests.country_of_residence` is a
+**FK to `countries.id`** (a UUID), not an ISO code; and an `invitations` row needs
+both `usage_status` and an `invitation_collection_id`, neither of which has a
+default, so a bare invitation cannot be created.
+
 ## Known gaps / follow-ups
 
 1. **Nothing has been exercised in a browser or against a live API.** Everything is reasoned

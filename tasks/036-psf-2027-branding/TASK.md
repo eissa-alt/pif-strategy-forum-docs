@@ -14,7 +14,7 @@ over from a different event.
 
 ## Scope
 
-- **In:** `-frontend` palette + header logo.
+- **In:** `-frontend` palette, header logo, page background, favicon, SEO share card.
 - **Out (owner decision):** `-admin`. It is an internal tool, still on Inter / NotoKufiArabic
   and its own theme; the brand manual governs public-facing material.
 - **Out:** the Fund webfont — **already done**. All four weights were installed at
@@ -65,6 +65,56 @@ sits on a black `body`, so this is the correct variation.
 - Header box resized `h-[50px] w-[80px]` → `h-[38px] w-[166px] sm:h-[46px] sm:w-[201px]`. The
   lockup is **4.364:1**; in the old near-square box `objectFit="contain"` would have
   letterboxed it to about a third of its usable size.
+
+### Background — the site was wearing Tourise's
+
+`public/images/pattern.jpg`, `pattern-page-2.png` and `pattern-page.png` were
+**byte-identical** to `Tourise/tourise-frontend`'s tiled geometric motif, and
+`layout/index.tsx` tiled one of them behind every page.
+
+Replaced with the PEP v2 setup, which is the reference PIF build: `pif-pattern.png`
+(the PIF "Ripple Effect", manual p19-21), `body` ground `#00231c`, and the ripple
+restored in the footer bled off the right edge (`bg-no-repeat` is load-bearing —
+repeated it becomes a tiled band). The four Tourise files are `git rm`'d.
+
+### Accent — the mint form controls
+
+`accent` was `#02CD9A`, the manual's bright mint. It is a legitimate PIF accent for
+graphics, but on radio dots, checkbox fills and focus rings it read as another
+client's palette. Now `#BD9B60`, taken from PEP v2, so all three tokens match it
+exactly: `primary #004D43`, `secondary #C4984F`, `accent #BD9B60`.
+
+### SEO share card — the worst one
+
+`public/seo/seo-v3.jpg` was a **full TOURISE 2027 poster**, byte-identical to
+Tourise's, and `_app.tsx` served it as the `og:image` — so every shared link
+previewed the wrong event. Replaced with `psf-2027-og.jpg`, composed from the real
+assets (PSF26 lockup on `#00231c` with the ripple, 1200x630, the OG spec).
+`seo.jpg` was identical to Tourise's too; both removed.
+
+`translations/*/meta.json` still said "Registration Portal" — the text that sits
+next to that card in a preview. Now the PSF 2027 name, EN and AR.
+
+### Favicon — it was another event's
+
+`favicon.ico`, `favicon.svg`, `favicon-96x96.png`, `apple-touch-icon.png` and both
+`web-app-manifest-*.png` were an **"E|G"** mark shared with Tourise and
+static-basecode, so every browser tab showed the wrong logo. Rebuilt from the PIF
+emblem inside the PSF26 lockup on the PIF green ground, rendered at 16/32/48/64
+(ico), 96, 180 and 192/512.
+
+`favicon.tsx` also hardcoded `theme-color: #2D2E80` (a basecode blue) and
+`msapplication-TileColor: #da532c` (an orange), and an `"app-name"` placeholder —
+all three corrected.
+
+### Em dashes removed (user request)
+
+32 translation strings across both apps, EN and AR, with per-sentence
+replacements rather than a blind swap — an em dash in "JPG or PNG - max 5 MB"
+wants a comma, "optional - you can set them later" wants a full stop. Plus 49
+`'-'` placeholder literals in 16 admin files normalised from the em dash to the
+hyphen the other 271 usages already used, and the category names. Code comments
+were deliberately left alone: not user-facing, and a large pointless diff.
 
 ## Verification
 
