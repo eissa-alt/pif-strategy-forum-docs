@@ -889,6 +889,18 @@ most of the high-severity list.
       neighbouring `admin/gates` group is gated with `admin.can:gates`; this one is not. Low
       sensitivity (it is a field-name catalogue, not guest data), but inconsistent with the
       surrounding routes. **Owner's call — it is their commit, not ours to change unilaterally.**
+      🔁 **REVERTED 2026-09-03 by [Task 039](../tasks/039-bundled-mandatory-fields/TASK.md).** Owner
+      chose to stop relying on `FormShapeFieldsSeeder`: the lists are back in the admin bundle as
+      `data/mandatory-fields-by-form-shape.tsx` behind `getMandatoryFieldsByFormShape`, matching
+      `123-pif-pep-v2`, and the table, model, controller, seeder, both routes and
+      `FormShapeFieldsTest` are gone (migration `2026_09_03_000001` drops the table). Reason: a list
+      change needed a re-seed on every environment or the picker showed a stale set — which bit us
+      the same day on Task 038's `title_id`. Parity was diffed per shape before deleting (9/9, 9/9,
+      30/30, 16/16, 10/10, order included); `full_name_on_document` survived the move **back** too.
+      ✔️ The `admin.can` gate concern above is **closed by removal** — the route no longer exists.
+      ⚠️ The `[~]` half stays open and is now known to be **the same in pep-v2**: neither backend
+      enforces `mandatory_fields` / `mandatory_fields_admin` for the main guest, and neither
+      validates the field keys. Only `extra_guest_mandatory_fields` is enforced, identically in both.
 - [ ] **Split the completion flow into purpose-scoped tokens (`completion_tokens`).**
       Replaces one-row-per-email token tables. Only relevant if we keep logistics.
       ⚠️ Related bug found on the way: sending a test email **silently invalidates the completion

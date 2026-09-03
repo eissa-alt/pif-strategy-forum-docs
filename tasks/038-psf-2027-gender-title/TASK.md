@@ -68,8 +68,9 @@ Title the private (guest) shape already had.
       `yarn type-check` + `yarn build`; admin `yarn check:rbac`)
 - [x] Docs updated (this TASK.md; index row)
 - [x] Mobile contract unaffected — no route added, removed or renamed; `routes/api.php` untouched
-- [ ] **`php artisan db:seed --class=FormShapeFieldsSeeder` on every other environment.** Done on
-      the local dev DB only. Without it `title_id` is not tickable as mandatory on the public
-      shape and the picker order is stale.
+- [x] ~~**`php artisan db:seed --class=FormShapeFieldsSeeder` on every other environment.**~~
+      **MOOT since [Task 039](../039-bundled-mandatory-fields/TASK.md)** (same day): the catalogue
+      is back in the admin bundle and the seeder is gone, so `title_id` ships with the build and
+      no environment needs a seed. Task 039 owes `php artisan migrate` instead, to drop the table.
 - [ ] Manual browser QA — both pages in EN **and AR**, the Title picker re-filtering when gender
       changes, and a public registration round-tripping a title into the admin see-more panel
