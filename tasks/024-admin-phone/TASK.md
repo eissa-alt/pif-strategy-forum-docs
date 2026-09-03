@@ -1,6 +1,6 @@
 # Task 024 — Add phone number to admins
 
-- **Status:** `done (code)` — manual browser QA pending
+- **Status:** `done (code)` — **superseded in part by [Task 037](../037-admins-form-trim/TASK.md)**
 - **Opened:** 2026-07-27
 - **Owner:** —
 - **Sub-app(s):** backend + admin
@@ -44,6 +44,13 @@ Give admins their own phone number, captured on create/edit and shown in the lis
   create defaults, and a shared-component fix — `PhoneInputV2` error text was `text-error` (undefined in
   this app's Tailwind v4 theme → rendered gray), switched to `text-red-500`; also fixes the guest admin
   forms that share the component. Dev DB migrated (`php artisan migrate`, not `fresh`). Ledger D45.
+
+- 2026-09-03 — **the form field is gone again.** [Task 037](../037-admins-form-trim/TASK.md) removed the
+  phone input from `admins-form.tsx` (create *and* edit) and the column from the listing at owner
+  request, which forced `store` / `update` validation from `required` / `sometimes|required` to
+  `nullable`. **The "required on create and edit" decision above no longer holds.** Everything else
+  this task built — the migration, the column, `$fillable`, `AdminsResources`, the profile response —
+  is untouched and still carries the stored numbers.
 
 ## Definition of Done
 
