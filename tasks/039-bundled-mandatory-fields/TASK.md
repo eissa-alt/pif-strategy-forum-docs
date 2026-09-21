@@ -89,6 +89,13 @@ cannot be marked mandatory. Left alone: the form already requires it whenever th
   **632 tests** (640 → 632: `FormShapeFieldsTest` plus the catalogue case); admin `yarn type-check`
   + `yarn build` + `yarn check:rbac` + eslint.
 
+- 2026-09-20 — **leftover closed.** `FORM_RESTRUCTURE_GUIDE.md` step 5 still told a developer
+  adding a form shape to edit `FormShapeFieldsSeeder::catalogue()` and re-seed — a seeder this task
+  deleted. Rewritten to point at `data/mandatory-fields-by-form-shape.tsx` and the
+  `getMandatoryFieldsByFormShape` switch. Found while porting this task back into
+  `121-alt-static-basecode` as its Task 034, which hit the same stale step; the port is committed
+  and pushed there (admin `507f8c5`, backend `d74f805`, docs `bd963ac`).
+
 ## Definition of Done
 
 - [x] Code merged to `dev` in the relevant sub-app(s)
