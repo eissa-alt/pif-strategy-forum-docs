@@ -1,0 +1,106 @@
+# Task 040 — Client registration feedback, 2026-09-20
+
+- **Status:** `done (code)` — merged to `main` and pushed; manual browser QA of the photo flow pending
+- **Opened:** 2026-09-20
+- **Owner:** Imtinan Almutairi
+- **Sub-app(s):** frontend + admin + backend
+- **Branch(es):** `dev` → `main` (fast-forward)
+
+## Goal
+
+Apply the client's feedback list on the three PSF links: public, private and the MoU
+(deals) link. Take the photo review, the phone field and the example photo plates from
+**Tourise** (`Tourise/tourise-frontend`), which had already solved the same problems.
+
+## The feedback, item by item
+
+| Link | Item | Done as |
+|---|---|---|
+| Public + private | Job title note: "Title limited to 30 characters" (EN + AR) | `web:badge_position_note` now reads "Title limited to {{max}} characters", interpolated from `BADGE_POSITION_MAX` (30) so the copy cannot drift from the cap. Admin create/edit forms share the key and got the same text |
+| Public + private | Photo-consent T&C, "you already have one from the previous PIF event" | New `components/shared/forms/photo-consent-checkbox.tsx` beside the privacy consent, with the previous PIF event's wording and read-more modal. Writes the existing `guests.photo_consent` column, so **no backend change**. **Required**, as on that event |
+| Public | "Receive communications from PIF?" moves under the photo | `pif_communications_consent` moved from page 2 to page 1, under the upload. Both pages share one form context, so page 2 still submits it |
+| All three | Inquiries email `psf@pif.gov.sa` | `ContactUs` default (covers all three links), plus the homepage and the default shape's privacy modal |
+| Public + private | "Use an AI tool to review and approve photos; the one used is too strict" | See [Photo review](#photo-review) |
+| MoU | Arabic "مراسم توقيع الصفقات" → "مراسم توقيع الاتفاقيات" | Both ceremony strings |
+| MoU | Arabic party labels: "الطرف الأول / الثاني في الاتفاقية" | Frontend + admin. English unchanged, as asked |
+
+Follow-ups requested the same day:
+
+- **Mobile Number field from Tourise**: see [Phone input](#phone-input).
+- **Photo example plates from Tourise**: five plates (accepted, busy background,
+  sunglasses, cropped, blurry) above the upload, `components/shared/photo-examples.tsx`.
+  Brand classes swapped to PSF's. Tourise's drawn SVG fallback was dropped: every tile
+  supplies a photo, so it was unreachable.
+- **The photo check must not block**: "no try again, make it submit, it will just note",
+  plus a static "Please upload a clear photo" note under the upload.
+
+## Photo review
+
+The server rule `WhiteBackgroundImage` was **never AI**. It sampled a fixed 8% border band
+and required most of it to be light, which is as much a question about framing as about
+background. A head-and-shoulders crop at 600×600 (exactly what the app uploads) puts hair
+and shoulders through that band and fails a real white backdrop. It had been relaxed
+twice already (236 → 215 → 170).
+
+**What replaced it** ([D50](../../decisions/LEDGER.md)):
+
+- **In the browser:** `utils/face-check.ts`, copied from Tourise. It runs face-api's
+  TinyFaceDetector on the crop before upload (193 KB + 77 KB weights, self-hosted in
+  `public/models`, dynamically imported so the join page stays 208 kB). It flags no face,
+  more than one face, a face too small in the frame, and sunglasses.
+- **Advisory only**, per the client. The photo uploads whatever the verdict. A failing one
+  gets a one-off toast plus an amber note under the field. Tourise blocks; PSF does not.
+  The trade: nobody is stuck behind a false negative (niqab, headscarf shading the brow,
+  dark room, turned face), and a genuinely bad photo can reach the badge desk.
+- **On the server:** `App\Rules\AcceptablePhoto` replaces `WhiteBackgroundImage` at both
+  upload endpoints, behind `PHOTO_REVIEW_DRIVER`:
+  - `off` (**the default**) accepts anything decodable.
+  - `azure` uses Azure AI Vision people detection, then measures the background outside
+    the person's box. **Built and tested against faked HTTP only: no subscription
+    exists.** It falls back to `local` when `AZURE_VISION_ENDPOINT` / `AZURE_VISION_KEY`
+    are empty, and to accept on any API failure.
+  - `local` is the old heuristic.
+
+  The 422 now carries a `reason` (`photo_no_person` / `photo_dark_background`).
+
+## Phone input
+
+`components/shared/forms/phone-input-new.tsx` now takes Tourise's behaviour on PSF's
+layout and colours:
+
+- The field holds the **whole international number**. The old split (code in the chip,
+  national part in the input) broke autofill: a browser writes `+966508057105` into a tel
+  field, the mask ate the code, and the number read invalid with nothing on screen to
+  explain why.
+- The dial code is locked. Paste, autofill and drop are normalised before the lock sees
+  them; trunk zeros and `00` prefixes are handled.
+- `data/phone-formats.ts` holds per-country grouping and valid mobile lengths from
+  libphonenumber metadata. It is generated by `scripts/generate-phone-formats.mjs`. The
+  library's fallback mask allowed 14 digits in a 9-digit number.
+- `utils/phone-validation.ts` replaces four copy-pasted validators. Its message names the
+  country's real length: `validation:invalid_phone_length` had been hardcoded to Saudi
+  Arabia's "9 digit" for every country.
+- **One fix Tourise still carries:** its `isFlagged` indexed `formState.errors[name]`
+  flat, which reads `undefined` for the deals form's nested paths. It now walks the path.
+
+## Commits
+
+- frontend `674b446`
+- admin `11a4e5e`
+- backend `8868788`
+
+## Gates
+
+- Backend: pint, phpstan, **690 tests**.
+- Both Next apps: `type-check` + `lint` + `build`.
+- Admin: `check:rbac`.
+
+## Verification still owed
+
+- ⚠️ **The face check has not run in a real browser.** The deal page was walked in
+  headless Chrome later ([Task 042](../042-deal-signing-slots/TASK.md)); the photo upload
+  was not.
+- ⚠️ The Azure driver has never met a real subscription. It is dormant at `off`.
+- Server deploy: `git pull` then `yarn install`, because `@vladmandic/face-api` is new.
+  The first server pull was refused over a local change to `yarn.lock`;
+  `git checkout -- yarn.lock` clears it.

@@ -1548,3 +1548,96 @@ same commit (11 keys each). Gates: pre-commit hooks green at commit time; **full
 Dev DB migrated; **prod `migrate` + per-category switch-on + manual QA pending.** Not mobile-facing
 (`/admin/*`, `routes/api.php` untouched). Task log:
 [`tasks/028-category-guest-action-gates/TASK.md`](../tasks/028-category-guest-action-gates/TASK.md).
+
+## D48 — 2026-09-21 — Deals are asked of guests by a per-guest link, not registered through a category
+
+**What:** the Deals Signing Ceremony stopped being a category of its own (client decision). The
+private category's guests are sent a single-use link from a **Deal** action in the guest listing,
+the same shape as complete-data here and speaker onboarding on Tourise. The deal is stored against
+that guest (`deals.guest_id`). Task log: [`tasks/041-deals-per-guest-link/TASK.md`](../tasks/041-deals-per-guest-link/TASK.md).
+
+**Durable decisions:**
+
+1. **One entry point.** `POST /api/deals` and the `psf-deals-2027` form shape are gone from both
+   front ends. A deal arrives only through `POST /api/complete-deal` with a live `deal_tokens`
+   token. Do not re-add a category route "for convenience": it would bypass the guest link.
+2. **The token is the identity.** The form never asks who the guest is. The token is burned
+   inside the same transaction as the write, by a conditional update, so a failed validation
+   keeps the link usable and a double submit cannot both succeed. Re-sending the link mints a
+   fresh token, which is how the team asks for a second round.
+3. **Gated per category and per role.** The action shows only where `with_request_deal` is on,
+   sends the category's `deal_email`, and needs the `guests_listing` `notify` action. The endpoint
+   re-checks the switch server-side.
+4. **An agreed point of contact is the guest.** With `contact_agreed: yes` the API stores
+   `guests.email`, whatever is posted. The page shows it locked (read-only, still submitted),
+   and skips the company-domain rule for it, since the private category allows personal
+   addresses.
+5. **The old category is switched off, never deleted.** Migration
+   `2026_09_21_000004_retire_deals_categories` deactivates any category on the retired shape.
+   It finds it **by shape, not slug** (it existed under more than one). Deletion is blocked by
+   `RESTRICT` foreign keys from `invitations` and `invitation_collections`, and the admin has no
+   category delete.
+
+**Landed:** backend `1ec18c6` + `08ff1c4`, admin `30c143e`, frontend `60458a5` + `269d351`, on
+`main`. Not mobile-facing (`docs/mobile/` has no deal routes).
+
+## D49 — 2026-09-21 — Deal signing slots: one agreement per slot, held from submission, confirmed or released by the review
+
+**What:** each agreement books a signing slot the team opened, instead of typing a time. Modelled
+on GFAI's bilateral booking. Task log: [`tasks/042-deal-signing-slots/TASK.md`](../tasks/042-deal-signing-slots/TASK.md).
+
+**Durable decisions:**
+
+1. **A slot per agreement, one agreement per slot.** A signing stage holds one ceremony at a
+   time. Venues exist so a second stage is a row, not code. There is no capacity or party-size
+   matching, unlike GFAI rooms.
+2. **Held from submission.** `Deal::HOLDING_STATUSES = [pending, accepted]`. A pending deal takes
+   its slots off every other guest's page. Rejected and returned **release** them. The cost is
+   that an unreviewed deal blocks its slots, so review the pending ones promptly.
+3. **Booking is serialised in the database, not the page.** The slot row is locked, and the
+   "still free?" check is **itself a locking read**. A plain read under MySQL's REPEATABLE READ
+   is served from the transaction's snapshot and misses the other guest's insert; this was
+   found on GFAI. A lost slot rolls back the whole submission, token included, with
+   `409 slot_taken` and the agreement's index. Verified on MySQL, since SQLite ignores locks.
+4. **Slots copy the catalogue's times.** Editing a time-slot window never moves an applied slot.
+   Moving a booked slot is allowed, but **does not email the guest**, as on GFAI.
+5. **Re-accepting re-takes slots and can fail.** Accepting a rejected or returned deal re-checks
+   each slot under the same locks, and refuses (409) if another deal took one since.
+6. **Deleting cannot strip a booking.** `deal_items.slot_id` is null-on-delete, never cascade,
+   and the admin refuses to delete a held slot or a venue with held slots.
+7. **The decision is the confirmation.** Accept and reject are saved only from the confirm
+   window, which shows where and when every agreement is booked. They email from the templates
+   in Deals > Settings; a step with no template sends nothing.
+8. **No new RBAC.** Scheduling rides on the `deals` feature: reading on `view`, every change on
+   `schedule`, deciding on `review`. The Delete row action was removed at client request; the
+   endpoint remains behind `delete`.
+
+**Landed:** backend `b3eb2a5` + `4ba6e76`, admin `34a00f8` + `08212f4`, frontend `9701903` +
+`3ea1813`, on `main`. The migration prefix `2026_09_22_000001` is a day ahead of the work; it
+cannot be renamed, since it has already run locally. ⚠️ Production needs slots opened before any
+deal link is sent.
+
+## D50 — 2026-09-20 — Registration photo review runs in the browser and advises; the server rule is off by default
+
+**What:** the client asked for an AI photo review because the existing one was too strict. The
+existing one was `WhiteBackgroundImage`, a border-sampling heuristic and not AI. The review now
+runs in the browser (Tourise's face-api face check) and **advises only**. Task log:
+[`tasks/040-registration-feedback-2026-09/TASK.md`](../tasks/040-registration-feedback-2026-09/TASK.md).
+
+**Durable decisions:**
+
+1. **Never block on the photo check.** The photo always uploads. A failing check (no face, more
+   than one face, face too small, sunglasses) leaves a note and a toast. Face detection's false
+   negatives fall unevenly (niqab, headscarf shading the brow, dark rooms, turned faces), so
+   blocking would strand exactly those guests. The review of badge photos before printing is
+   now the real backstop.
+2. **A detector that cannot load says nothing.** It never produces a warning the guest cannot
+   act on.
+3. **The server rule is pluggable and OFF.** `App\Rules\AcceptablePhoto` behind
+   `PHOTO_REVIEW_DRIVER` = `off` (default) | `azure` | `local`. The Azure AI Vision driver
+   (people detection, then the background measured outside the person) is built but dormant:
+   no subscription exists. It falls back to `local` without credentials, and to accept on any
+   API failure.
+
+**Landed:** frontend `674b446`, backend `8868788`, on `main`.
+

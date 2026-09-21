@@ -3,7 +3,48 @@
 > Rolling pointer, overwritten each session. For the durable record see the per-task `TASK.md`,
 > `decisions/LEDGER.md`, and `upgrades/UPGRADE_SUMMARY.md`. Full plan: `upgrades/CYAN_FEATURE_PARITY_MASTER_PLAN.md`.
 
-**2026-09-01 (latest) — Task 034: the PSF 2027 registration sheet is implemented, except Deals.
+**2026-09-21 (latest) — Tasks 040 to 042: the client's registration feedback, deals as a per-guest
+link, and deal signing slots on GFAI's model. Everything COMMITTED, PUSHED and MERGED to `main`
+in all three code repos; `dev` = `main` = origin. Backend pint + phpstan + 741 tests; both Next
+apps type-check + lint + build; admin check:rbac.**
+- **[040](tasks/040-registration-feedback-2026-09/TASK.md), registration feedback (2026-09-20).**
+  - Job title note states the 30-character cap.
+  - A **required** photo-consent T&C.
+  - The PIF communications question moved under the photo.
+  - Inquiries email `psf@pif.gov.sa`.
+  - Arabic "الاتفاقيات".
+  - The **photo check now runs in the browser** (Tourise's face-api) and **only advises**. The
+    old server heuristic is **off** behind `PHOTO_REVIEW_DRIVER`, with an Azure driver dormant
+    for lack of a key ([D50](decisions/LEDGER.md)).
+  - Also from Tourise: the Mobile Number field and the photo example plates.
+- **[041](tasks/041-deals-per-guest-link/TASK.md), there is no deals category ([D48](decisions/LEDGER.md)).**
+  The private category's guests get a single-use link from a 🤝 Deal action in the guest
+  listing; the deal is stored against the guest. The category route and shape are removed, and
+  the old category is **switched off by migration, not deleted**.
+- **[042](tasks/042-deal-signing-slots/TASK.md), signing slots ([D49](decisions/LEDGER.md)).**
+  - Each agreement books a slot the team opened. A pending deal holds it; reject or return
+    releases it.
+  - Admin: Signing schedule / Time slots / Venues / Settings, a Signing slot column, and
+    ✓ / ✗ from the row and the grid through a confirm window. **Delete is removed.**
+  - Emails come from the templates in Deals > Settings.
+- **⚠️ Before this runs in production, in order:**
+  1. `php artisan migrate`: five new migrations since 2026-09-20.
+  2. `yarn install` on the frontend (`@vladmandic/face-api`), then build both Next apps.
+  3. Private category: switch on **Deals Signing Ceremony** and pick a template with the
+     **Deal Link** variable.
+  4. **Deals > Time slots:** open slots on the signing days. **With none, guests cannot submit
+     a deal.**
+  5. Deals > Settings: pick the templates.
+- **⚠️ Browser coverage is partial.** The guest deal page was walked in headless Chrome (EN + AR)
+  and two bugs were fixed from it. **Not yet opened in a browser:** the admin deal screens, and
+  the registration photo upload with its face check.
+- **Owner-facing leftovers:**
+  - "See more" still holds a review section; it is the only way to mark a deal *returned*.
+  - The deal delete endpoint still exists behind its permission.
+  - Moving a booked slot does not email the guest.
+  - The owner's local DB has a demo schedule (5, 6 and 7 Oct).
+
+**2026-09-01 — Task 034: the PSF 2027 registration sheet is implemented, except Deals.
 Two new guest form shapes ship end to end (backend + admin + frontend + docs). ALL GATES GREEN —
 backend pint + phpstan + **635 tests** (618 → 635, 17 new); both Next apps `yarn type-check` +
 `yarn build`; admin `yarn check:rbac`. NOTHING COMMITTED, NOTHING PUSHED.**

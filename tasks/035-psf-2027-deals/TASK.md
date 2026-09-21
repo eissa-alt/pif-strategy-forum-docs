@@ -1,15 +1,28 @@
 # Task 035 — PSF 2027 Deals Signing Ceremony module
 
-- **Status:** `todo`
+- **Status:** `done (code)` — built 2026-09-06/07 as a category flow, then reshaped: per-guest link ([041](../041-deals-per-guest-link/TASK.md)) and signing slots ([042](../042-deal-signing-slots/TASK.md))
 - **Opened:** 2026-09-01
-- **Owner:** unassigned
+- **Owner:** Imtinan Almutairi
 - **Sub-app(s):** backend | admin | frontend | docs
 - **Branch(es):** —
 
-> **Nothing here has been built.** This is the spec split out of
-> [Task 034](../034-psf-2027-registration-shapes/TASK.md), which shipped the two guest
-> registration shapes. Written while the sheet was open, so the requirements are not
-> re-derived later.
+> **Update 2026-09-21: this is built, and the flow has moved on.** Everything below is the
+> original spec, kept as written.
+>
+> - **Built 2026-09-06/07 as a category.** Form shape `psf-deals-2027`, `POST /api/deals`,
+>   the four-table deals tree, and the admin listing with review. Backend `fb8d897` …
+>   `d1ea8a9`, admin `4746f18` / `77e1049`, frontend `0b3ee72` …
+> - **Reshaped 2026-09-21 into a per-guest link** ([Task 041](../041-deals-per-guest-link/TASK.md),
+>   ledger D48). There is no deals category any more. The private category's guests are
+>   sent a single-use link from a Deal action in the guest listing. The category route and
+>   shape are removed, and the old category is switched off by migration.
+> - **Signing slots added the same day** ([Task 042](../042-deal-signing-slots/TASK.md),
+>   ledger D49). Each agreement books a slot the team opened, instead of typing a time.
+>   The admin gains a schedule, time slots, venues and email settings, and decides from
+>   the row with a confirm step.
+>
+> The original banner said "Nothing here has been built"; it was left stale for two weeks
+> after the build.
 
 ## Goal
 
