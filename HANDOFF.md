@@ -3,7 +3,29 @@
 > Rolling pointer, overwritten each session. For the durable record see the per-task `TASK.md`,
 > `decisions/LEDGER.md`, and `upgrades/UPGRADE_SUMMARY.md`. Full plan: `upgrades/CYAN_FEATURE_PARITY_MASTER_PLAN.md`.
 
-**2026-09-21 (latest) — Tasks 040 to 042: the client's registration feedback, deals as a per-guest
+**2026-10-08 (latest) — Task 044: the `pif-strategy` form shape for the PIF Partners' Series
+Strategy Forum. Implemented in backend + admin + frontend and committed on `dev` (backend
+`d6c878f`, admin `1741030`, frontend `bc99a65`).**
+- **[044](tasks/044-pif-strategy-shape/TASK.md).** It is PSE with-photo plus:
+  - two photo examples;
+  - a description under each breakout session;
+  - the forum brief on the success page;
+  - the forum's contact email and consent text.
+  
+  The PSE shapes are unchanged.
+- **Gates:**
+  - Both Next apps pass `type-check`, `build`, and eslint + prettier on the changed files; admin
+    also passes `check:rbac`.
+  - Backend `pint --test` and `phpstan` are clean.
+  - ⚠️ The backend suite is **37 failed / 718 passed**. All of the failures are in
+    `DealSubmissionTest` / `DealSlotBookingTest`: a live reCAPTCHA call under `testing`, unrelated
+    to 044 (see its Log).
+- **Owed:** a browser walk (EN + AR), and the client's review of the Arabic copy.
+- **Not reflected below:** the P1.1–P1.6 rebrand to the Internal Audit Community Forum (2026-09-23/24)
+  and [043](tasks/043-pse-breakout-sessions/TASK.md), the PSE breakout sessions (2026-09-28, still
+  `in-progress`: browser checks owed).
+
+**2026-09-21 — Tasks 040 to 042: the client's registration feedback, deals as a per-guest
 link, and deal signing slots on GFAI's model. Everything COMMITTED, PUSHED and MERGED to `main`
 in all three code repos; `dev` = `main` = origin. Backend pint + phpstan + 741 tests; both Next
 apps type-check + lint + build; admin check:rbac.**
